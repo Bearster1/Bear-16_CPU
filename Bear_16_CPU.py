@@ -1,15 +1,19 @@
+def fixBits(data: int, bits: int = 16) -> int:
+    mask = (1 << bits) - 1
+    return mask & data
+
 # Registers
 class register:
     def __init__(self, name: str, index: int, data: int = 0) -> None:
         self.name = name
         self.index = index
-        self.data = data
+        self.data = fixBits(data)
 
     def store(self, data: int) -> None:
-        self.data = data
+        self.data = fixBits(data)
 
     def read(self) -> int:
-        return self.data
+        return fixBits(self.data)
 
 # Special registers: Stack Pointer, Memory Address Register, Program Counter, Memory Data Register, Current Instruction Register, Accumulator
 class accumulator(register):
@@ -17,23 +21,23 @@ class accumulator(register):
         super().__init__("Accumulator", 7, 0)
 
     def add(self, register: object) -> None:
-        self.data += register.read()
+        self.data = fixBits(self.data + register.read())
     def sub(self, register: object) -> None:
-        self.data -= register.read()
+        self.data = fixBits(self.data - register.read())
     def neg(self) -> None:
-        self.data = -self.data
+        self.data = fixBits(-self.data)
     def bitwiseAnd(self, register: object) -> None:
-        self.data &= register.read()
+        self.data = fixBits(self.data & register.read())
     def bitwiseOr(self, register: object) -> None:
-        self.data |= register.read()
+        self.data = fixBits(self.data | register.read())
     def bitwiseNot(self) -> None:
-        self.data = 0xFFFF - self.data
+        self.data = fixBits(0xFFFF - fixBits(self.data))
     def bitwiseXor(self, register: object) -> None:
-        self.data ^= register.read()
+        self.data = fixBits(self.data ^ register.read())
     def leftShift(self) -> None:
-        self.data <<= 1
+        self.data = fixBits(fixBits(self.data) << 1)
     def rightShift(self) -> None:
-        self.data >>= 1
+        self.data = fixBits(fixBits(self.data) >> 1)
 
 class stackPointer(register):
     def __init__(self, ram: list[int]) -> None:
@@ -45,20 +49,20 @@ class stackPointer(register):
         self.ram = ram
 
     def push(self, data: int) -> None:
-        self.ram[self.data] = data
-        self.data += 1
+        self.ram[fixBits(self.data)] = fixBits(data)
+        self.data = fixBits(self.data + 1)
         if self.data - self.stackStart >= self.stackSize:
-            self.data = self.stackStart
+            self.data = fixBits(self.stackStart)
 
     def pop(self) -> int:
-        self.data -= 1
-        returnData = self.ram[self.data]
+        self.data = fixBits(self.data - 1)
+        returnData = self.ram[fixBits(self.data)]
 
         if self.data < self.stackStart:
             print("?")
-            self.data = self.stackStart + self.stackSize - 1
+            self.data = fixBits(self.stackStart + self.stackSize - 1)
 
-        return returnData
+        return fixBits(returnData)
 
 class MAR(register): # Memory Address Register
     def __init__(self, pc: object) -> None:
@@ -67,7 +71,7 @@ class MAR(register): # Memory Address Register
         self.pc = pc
 
     def store(self) -> None:
-        self.data = self.pc.read()
+        self.data = fixBits(self.pc.read())
 
 class PC(register): # Program Counter
     def __init__(self) -> None:
@@ -75,7 +79,7 @@ class PC(register): # Program Counter
         super().__init__("Program Counter", 10, pc_start)
 
     def inc(self) -> None:
-        self.data += 1
+        self.data = fixBits(self.data + 1)
 
 class MDR(register): # Memory Data Register
     def __init__(self, ram: list[int], mar: object) -> None:
@@ -84,7 +88,7 @@ class MDR(register): # Memory Data Register
         self.mar = mar
 
     def store(self) -> None:
-        self.data = self.ram[self.mar.read()]
+        self.data = self.ram[fixBits(self.mar.read())]
 
 class CIR(register): # Current Instruction Register
     def __init__(self, mdr: object) -> None:
@@ -92,7 +96,7 @@ class CIR(register): # Current Instruction Register
         self.mdr = mdr
 
     def store(self) -> None:
-        self.data = self.mdr.read()
+        self.data = fixBits(self.mdr.read())
 
 def main():
     print("Welcome to the Bear-16 CPU Emulator")
