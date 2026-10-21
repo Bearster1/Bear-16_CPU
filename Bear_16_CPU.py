@@ -1,3 +1,6 @@
+import Peripherals.Peripheral as Peripheral  # noqa: PLR0402
+
+
 def fixBits(data: int, bits: int = 16) -> int:
     mask = (1 << bits) - 1
     return mask & data
@@ -64,22 +67,22 @@ class stackPointer(register):
 
         return fixBits(returnData)
 
+class PC(register): # Program Counter
+    def __init__(self) -> None:
+        pc_start = 0x8000
+        super().__init__("Program Counter", 9, pc_start)
+
+    def inc(self) -> None:
+        self.data = fixBits(self.data + 1)
+
 class MAR(register): # Memory Address Register
     def __init__(self, pc: object) -> None:
-        super().__init__("Memory Address Register", 9, 0)
+        super().__init__("Memory Address Register", 10, 0)
 
         self.pc = pc
 
     def store(self) -> None:
         self.data = fixBits(self.pc.read())
-
-class PC(register): # Program Counter
-    def __init__(self) -> None:
-        pc_start = 0x8000
-        super().__init__("Program Counter", 10, pc_start)
-
-    def inc(self) -> None:
-        self.data = fixBits(self.data + 1)
 
 class MDR(register): # Memory Data Register
     def __init__(self, mem: object, mar: object) -> None:
@@ -100,7 +103,7 @@ class CIR(register): # Current Instruction Register
 
 # Memory
 class memory:
-    def __init__(self, cpu):
+    def __init__(self, cpu: object):
         # memory settup:
         # 0x0000 - 0x3FFF RAM
         # 0x4000 - 0x7FFF Peripherals
@@ -143,9 +146,47 @@ class memory:
 # CPU
 class CPU:
     def __init__(self):
-        self.ram = [0x0000] * 65536
+        self.peripheral = Peripheral.peripheral(self)
 
+        #   Define Registers and Memory
+        self.memory = memory(self)
         
+        self.r0 = register("r0", 0, 0)
+        self.r1 = register("r1", 1, 0)
+        self.r2 = register("r2", 2, 0)
+        self.r3 = register("r3", 3, 0)
+        self.r4 = register("r4", 4, 0)
+        self.r5 = register("r5", 5, 0)
+        self.r6 = register("r6", 6, 0)
+        self.acc = accumulator()
+
+        self.stackPointer = stackPointer(self.memory)
+        self.PC = PC()
+        self.MAR = MAR(self.PC)
+        self.MDR = MDR(self.memory, self.MAR)
+        self.CIR = CIR(self.MDR)
+
+    def fetch(self) -> None:
+        self.MAR.store()
+        self.PC.inc()
+        self.MDR.store()
+        self.CIR.store()
+
+        self.decode()
+        if self.immediate:
+            self.MAR.store()
+            self.PC.inc()
+            self.MDR.store()
+        
+    def decode(self) -> None:
+        instruction = self.CIR.read()
+        self.opcode = instruction >> 8
+        self.operand = fixBits(instruction, 8)
+
+        self.immediate = False # Temp variable to not cause crashes during testing
+
+    def execute(self) -> None:
+        pass # Implement later
 
 def main():
     print("Welcome to the Bear-16 CPU Emulator")
