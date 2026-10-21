@@ -40,23 +40,23 @@ class accumulator(register):
         self.data = fixBits(fixBits(self.data) >> 1)
 
 class stackPointer(register):
-    def __init__(self, ram: list[int]) -> None:
+    def __init__(self, mem: object) -> None:
         self.stackStart = 0x0100
         self.stackSize = 0x100
 
         super().__init__("Stack Pointer", 8, self.stackStart)
 
-        self.ram = ram
+        self.mem = mem
 
     def push(self, data: int) -> None:
-        self.ram[fixBits(self.data)] = fixBits(data)
+        self.mem.store(fixBits(data), fixBits(self.data))
         self.data = fixBits(self.data + 1)
         if self.data - self.stackStart >= self.stackSize:
             self.data = fixBits(self.stackStart)
 
     def pop(self) -> int:
         self.data = fixBits(self.data - 1)
-        returnData = self.ram[fixBits(self.data)]
+        returnData = self.mem.read(fixBits(self.data))
 
         if self.data < self.stackStart:
             print("?")
@@ -75,20 +75,20 @@ class MAR(register): # Memory Address Register
 
 class PC(register): # Program Counter
     def __init__(self) -> None:
-        pc_start = 0xC000
+        pc_start = 0x8000
         super().__init__("Program Counter", 10, pc_start)
 
     def inc(self) -> None:
         self.data = fixBits(self.data + 1)
 
 class MDR(register): # Memory Data Register
-    def __init__(self, ram: list[int], mar: object) -> None:
+    def __init__(self, mem: object, mar: object) -> None:
         super().__init__("Memory Data Register", 11, 0)
-        self.ram = ram
+        self.mem = mem
         self.mar = mar
 
     def store(self) -> None:
-        self.data = self.ram[fixBits(self.mar.read())]
+        self.data = self.mem.read(fixBits(self.mar.read()))
 
 class CIR(register): # Current Instruction Register
     def __init__(self, mdr: object) -> None:
@@ -97,6 +97,55 @@ class CIR(register): # Current Instruction Register
 
     def store(self) -> None:
         self.data = fixBits(self.mdr.read())
+
+# Memory
+class memory:
+    def __init__(self, cpu):
+        # memory settup:
+        # 0x0000 - 0x3FFF RAM
+        # 0x4000 - 0x7FFF Peripherals
+        # 0x8000 - 0xFFFF ROM
+        self.name = "Memory"
+        self.data = [0] * 65536
+        self.cpu = cpu
+
+    def writeROM(self, data: int, address: int) -> None:
+        address = fixBits(address)
+        data = fixBits(data)
+
+        if address > 0x7FFF:
+            self.data[address] = data
+
+    def store(self, data: int, address: int) -> None:
+        address = fixBits(address)
+        data = fixBits(data)
+
+        if address > 0x7FFF:
+            return # Stops you from writing to the ROM
+        elif address > 0x3FFF:
+            format: str = self.cpu.peripheral.confirmFormat(address) # Returns R, W, RW or "" depending on if it can be read from, written to, both written to and read from or neither (If the address doesn't exist as a peripheral)
+            if "W" not in format:
+                return # Stops you from writing to Read-Only formats
+            # Otherwise continues and writes to ram
+            
+        self.data[address] = data
+
+    def read(self, address: int) -> int:
+        address = fixBits(address)
+
+        if address > 0x3FFF and address < 0x8000:
+            format: str = self.cpu.peripheral.confirmFormat(address) # Returns R, W, RW or "" depending on if it can be read from, written to, both written to and read from or neither (If the address doesn't exist as a peripheral)
+            if "R" not in format:
+                return 0
+
+        return self.data[address]
+
+# CPU
+class CPU:
+    def __init__(self):
+        self.ram = [0x0000] * 65536
+
+        
 
 def main():
     print("Welcome to the Bear-16 CPU Emulator")
