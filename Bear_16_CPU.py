@@ -19,35 +19,58 @@ class register:
         return fixBits(self.data)
 
 # Special registers: Stack Pointer, Memory Address Register, Program Counter, Memory Data Register, Current Instruction Register, Accumulator
-class accumulator(register):
+class carry(register):
     def __init__(self) -> None:
-        super().__init__("Accumulator", 7, 0)
+        super().__init__("Carry", 7, 0)
+
+class accumulator(register):
+    def __init__(self, carry: object) -> None:
+        super().__init__("Accumulator", 8, 0)
+        self.carry = carry
+
+    def accFixBits(self, data: int, bits: int = 16):
+        strdata = bin(data).replace("0b", "").replace("-", "")
+        if len(strdata) >= bits + 1:
+            self.carry.store(fixBits(int(strdata[len(strdata) - (bits + 1)])))
+        else:
+            self.carry.store(0)
+        return fixBits(data, bits)
 
     def add(self, register: object) -> None:
-        self.data = fixBits(self.data + register.read())
+        self.data = self.accFixBits(self.data + register.read())
+    def addc(self, register: object) -> None:
+        self.data = self.accFixBits(self.data + register.read() + self.carry.read())
     def sub(self, register: object) -> None:
-        self.data = fixBits(self.data - register.read())
+        result = self.data - register.read()
+        if self.data >= register.read():
+            result += 0x10000
+        self.data = self.accFixBits(result)
+    def subc(self, register: object) -> None:
+        result = self.data - register.read() - self.carry.read()
+        if (self.data >= register.read() and self.carry.read() == 0) or (self.data > register.read() and self.carry.read() == 1):
+            result += 0x10000
+        self.data = self.accFixBits(result)
     def neg(self) -> None:
-        self.data = fixBits(-self.data)
+        self.data = self.accFixBits(-self.data)
     def bitwiseAnd(self, register: object) -> None:
-        self.data = fixBits(self.data & register.read())
+        self.data = self.accFixBits(self.data & register.read())
     def bitwiseOr(self, register: object) -> None:
-        self.data = fixBits(self.data | register.read())
+        self.data = self.accFixBits(self.data | register.read())
     def bitwiseNot(self) -> None:
-        self.data = fixBits(0xFFFF - fixBits(self.data))
+        self.data = self.accFixBits(0xFFFF - fixBits(self.data))
     def bitwiseXor(self, register: object) -> None:
-        self.data = fixBits(self.data ^ register.read())
+        self.data = self.accFixBits(self.data ^ register.read())
     def leftShift(self) -> None:
-        self.data = fixBits(fixBits(self.data) << 1)
+        self.data = self.accFixBits(fixBits(self.data) << 1)
     def rightShift(self) -> None:
-        self.data = fixBits(fixBits(self.data) >> 1)
+        self.data = self.accFixBits(fixBits(self.data) >> 1)
 
 class stackPointer(register):
     def __init__(self, mem: object) -> None:
         self.stackStart = 0x0100
         self.stackSize = 0x100
 
-        super().__init__("Stack Pointer", 8, self.stackStart)
+        super().__init__("Stack Pointer", 9, self.stackStart)
 
         self.mem = mem
 
@@ -70,14 +93,14 @@ class stackPointer(register):
 class PC(register): # Program Counter
     def __init__(self) -> None:
         pc_start = 0x8000
-        super().__init__("Program Counter", 9, pc_start)
+        super().__init__("Program Counter", 10, pc_start)
 
     def inc(self) -> None:
         self.data = fixBits(self.data + 1)
 
 class MAR(register): # Memory Address Register
     def __init__(self, pc: object) -> None:
-        super().__init__("Memory Address Register", 10, 0)
+        super().__init__("Memory Address Register", 11, 0)
 
         self.pc = pc
 
@@ -86,7 +109,7 @@ class MAR(register): # Memory Address Register
 
 class MDR(register): # Memory Data Register
     def __init__(self, mem: object, mar: object) -> None:
-        super().__init__("Memory Data Register", 11, 0)
+        super().__init__("Memory Data Register", 12, 0)
         self.mem = mem
         self.mar = mar
 
@@ -95,7 +118,7 @@ class MDR(register): # Memory Data Register
 
 class CIR(register): # Current Instruction Register
     def __init__(self, mdr: object) -> None:
-        super().__init__("Current Instruction Register", 12, 0)
+        super().__init__("Current Instruction Register", 13, 0)
         self.mdr = mdr
 
     def store(self) -> None:
@@ -158,7 +181,9 @@ class CPU:
         self.r4 = register("r4", 4, 0)
         self.r5 = register("r5", 5, 0)
         self.r6 = register("r6", 6, 0)
-        self.acc = accumulator()
+
+        self.carry = carry()
+        self.acc = accumulator(self.carry)
 
         self.stackPointer = stackPointer(self.memory)
         self.PC = PC()
@@ -182,6 +207,9 @@ class CPU:
         instruction = self.CIR.read()
         self.opcode = instruction >> 8
         self.operand = fixBits(instruction, 8)
+
+        # opcode will be decoded through numbers
+        # operand will be a look up table: Bits A + B = Data type, 00: Register, 01: Immediate, 10: Carry, 11: PC
 
         self.immediate = False # Temp variable to not cause crashes during testing
 
