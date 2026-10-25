@@ -211,8 +211,8 @@ class CPU:
         # opcode will be decoded through numbers
         # operand will be a look up table: 
         #   Bits A + B = Data type, 00: Register, 01: Immediate, 10: Carry, 11: PC
-        #   Bits C + D + E = Register 1: r0, r1, r2, r3, r4, r5, r6, acc (This is the register used for writing)
-        #   Bits F + G + H = Register 2: r0, r1, r2, r3, r4, r5, r6, acc (This is the register used for reading, it is replaced by data type)
+        #   Bits C + D + E = Register 1 also called the condition bus: r0, r1, r2, r3, r4, r5, r6, acc (This is the register used for writing)
+        #   Bits F + G + H = Register 2 also called the data bus: r0, r1, r2, r3, r4, r5, r6, acc (This is the register used for reading, it is replaced by data type)
 
         if self.operand >> 6 == 1:
             self.immediate = True
@@ -220,7 +220,49 @@ class CPU:
             self.immediate = False
 
     def execute(self) -> None:
-        pass # Implement later
+        match self.opcode:
+            case 0: return # NOP
+
+
+            case 1: pass # LDR x y ; Loads y (Data bus) into register x (Condition bus)
+            case 2: pass # LDM x y ; Loads value at memory address y (Data bus) into register x (Condition bus)
+            case 3: pass # STM x y ; Loads value in register x (Condition bus) into memory address y (Data bus)
+            case 4: pass # STM x y ; Loads value in register x (Data bus) into memory address y (Condition bus) ; The name of this command is subject to change
+
+
+            case 5: pass # ADD x ; Adds x (Data bus) to Accumulator
+            case 6: pass # ADDC x ; Adds x (Data bus) and Carry to Accumulator
+            case 7: pass # SUB x ; Subtracts x (Data bus) from Accumulator
+            case 8: pass # SUBC x ; Subtracts x (Data bus) and Carry from Accumulator
+            case 9: pass # NEG ; Negates the accumulator
+            case 10: pass # AND x ; ANDs x (Data bus) and Accumulator
+            case 11: pass # OR ; ORs x (Data bus) and Accumulator
+            case 12: pass # NOT ; NOTs the Accumulator
+            case 13: pass # XOR ; XORs x (Data bus) and Accumulator
+            case 14: pass # LTS ; Left Shifts the Acc
+            case 15: pass # RTS ; Right Shifts the Acc
+
+
+            case 16: pass # JGT x y ; Jumps to y (Data bus) if x (Condition bus) is greater than 0
+            case 17: pass # JEQ x y ; Jumps to y (Data bus) if x (Condition bus) is equal to 0
+            case 18: pass # JGE x y ; Jumps to y (Data bus) if x (Condition bus) is greater than or equal to 0
+            case 19: pass # JLT x y ; Jumps to y (Data bus) if x (Condition bus) is less than 0
+            case 20: pass # JNE x y ; Jumps to y (Data bus) if x (Condition bus) is not equal to 0
+            case 21: pass # JLE x y ; Jumps to y (Data bus) if x (Condition bus) is less than or equal to 0
+
+            case 22: pass # JGT x y ; Jumps to y (Condition bus) if x (Data bus) is greater than 0
+            case 23: pass # JEQ x y ; Jumps to y (Condition bus) if x (Data bus) is equal to 0
+            case 24: pass # JGE x y ; Jumps to y (Condition bus) if x (Data bus) is greater than or equal to 0
+            case 25: pass # JLT x y ; Jumps to y (Condition bus) if x (Data bus) is less than 0
+            case 26: pass # JNE x y ; Jumps to y (Condition bus) if x (Data bus) is not equal to 0
+            case 27: pass # JLE x y ; Jumps to y (Condition bus) if x (Data bus) is less than or equal to 0
+            
+            case 28: pass # JMP x ; Jumps to y (Data bus)
+
+
+            case 29: pass # PUSH x ; Pushes x (Data bus) to the stack
+            case 30: pass # POP x ; Pops from the stack and places in x (Condition bus)
+            
 
 def main():
     print("Welcome to the Bear-16 CPU Emulator")
