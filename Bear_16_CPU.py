@@ -209,9 +209,15 @@ class CPU:
         self.operand = fixBits(instruction, 8)
 
         # opcode will be decoded through numbers
-        # operand will be a look up table: Bits A + B = Data type, 00: Register, 01: Immediate, 10: Carry, 11: PC
+        # operand will be a look up table: 
+        #   Bits A + B = Data type, 00: Register, 01: Immediate, 10: Carry, 11: PC
+        #   Bits C + D + E = Register 1: r0, r1, r2, r3, r4, r5, r6, acc (This is the register used for writing)
+        #   Bits F + G + H = Register 2: r0, r1, r2, r3, r4, r5, r6, acc (This is the register used for reading, it is replaced by data type)
 
-        self.immediate = False # Temp variable to not cause crashes during testing
+        if self.operand >> 6 == 1:
+            self.immediate = True
+        else:
+            self.immediate = False
 
     def execute(self) -> None:
         pass # Implement later
