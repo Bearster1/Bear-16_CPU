@@ -31,35 +31,35 @@ class accumulator(register):
     def accFixBits(self, data: int, bits: int = 16):
         strdata = bin(data).replace("0b", "").replace("-", "")
         if len(strdata) >= bits + 1:
-            self.carry.store(fixBits(int(strdata[len(strdata) - (bits + 1)])))
+            self.carry.store(fixBits(int(strdata[len(strdata) - (bits + 1)]))) # type: ignore
         else:
-            self.carry.store(0)
+            self.carry.store(0) # type: ignore
         return fixBits(data, bits)
 
     def add(self, register: object) -> None:
-        self.data = self.accFixBits(self.data + register.read())
+        self.data = self.accFixBits(self.data + register.read()) # type: ignore
     def addc(self, register: object) -> None:
-        self.data = self.accFixBits(self.data + register.read() + self.carry.read())
+        self.data = self.accFixBits(self.data + register.read() + self.carry.read()) # type: ignore
     def sub(self, register: object) -> None:
-        result = self.data - register.read()
-        if self.data >= register.read():
+        result = self.data - register.read() # type: ignore
+        if self.data >= register.read(): # type: ignore
             result += 0x10000
         self.data = self.accFixBits(result)
     def subc(self, register: object) -> None:
-        result = self.data - register.read() - self.carry.read()
-        if (self.data >= register.read() and self.carry.read() == 0) or (self.data > register.read() and self.carry.read() == 1):
+        result = self.data - register.read() - self.carry.read() # type: ignore
+        if (self.data >= register.read() and self.carry.read() == 0) or (self.data > register.read() and self.carry.read() == 1): # type: ignore
             result += 0x10000
         self.data = self.accFixBits(result)
     def neg(self) -> None:
         self.data = self.accFixBits(-self.data)
     def bitwiseAnd(self, register: object) -> None:
-        self.data = self.accFixBits(self.data & register.read())
+        self.data = self.accFixBits(self.data & register.read()) # type: ignore
     def bitwiseOr(self, register: object) -> None:
-        self.data = self.accFixBits(self.data | register.read())
+        self.data = self.accFixBits(self.data | register.read()) # type: ignore
     def bitwiseNot(self) -> None:
         self.data = self.accFixBits(0xFFFF - fixBits(self.data))
     def bitwiseXor(self, register: object) -> None:
-        self.data = self.accFixBits(self.data ^ register.read())
+        self.data = self.accFixBits(self.data ^ register.read()) # type: ignore
     def leftShift(self) -> None:
         self.data = self.accFixBits(fixBits(self.data) << 1)
     def rightShift(self) -> None:
@@ -75,14 +75,14 @@ class stackPointer(register):
         self.mem = mem
 
     def push(self, data: int) -> None:
-        self.mem.store(fixBits(data), fixBits(self.data))
+        self.mem.store(fixBits(data), fixBits(self.data)) # type: ignore
         self.data = fixBits(self.data + 1)
         if self.data - self.stackStart >= self.stackSize:
             self.data = fixBits(self.stackStart)
 
     def pop(self) -> int:
         self.data = fixBits(self.data - 1)
-        returnData = self.mem.read(fixBits(self.data))
+        returnData = self.mem.read(fixBits(self.data)) # type: ignore
 
         if self.data < self.stackStart:
             print("?")
@@ -104,8 +104,8 @@ class MAR(register): # Memory Address Register
 
         self.pc = pc
 
-    def store(self) -> None:
-        self.data = fixBits(self.pc.read())
+    def store(self) -> None: # type: ignore
+        self.data = fixBits(self.pc.read()) # type: ignore
 
 class MDR(register): # Memory Data Register
     def __init__(self, mem: object, mar: object) -> None:
@@ -113,16 +113,16 @@ class MDR(register): # Memory Data Register
         self.mem = mem
         self.mar = mar
 
-    def store(self) -> None:
-        self.data = self.mem.read(fixBits(self.mar.read()))
+    def store(self) -> None: # type: ignore
+        self.data = self.mem.read(fixBits(self.mar.read())) # type: ignore
 
 class CIR(register): # Current Instruction Register
     def __init__(self, mdr: object) -> None:
         super().__init__("Current Instruction Register", 13, 0)
         self.mdr = mdr
 
-    def store(self) -> None:
-        self.data = fixBits(self.mdr.read())
+    def store(self) -> None: # type: ignore
+        self.data = fixBits(self.mdr.read()) # type: ignore
 
 # Memory
 class memory:
@@ -149,7 +149,7 @@ class memory:
         if address > 0x7FFF:
             return # Stops you from writing to the ROM
         elif address > 0x3FFF:
-            format: str = self.cpu.peripheral.confirmFormat(address) # Returns R, W, RW or "" depending on if it can be read from, written to, both written to and read from or neither (If the address doesn't exist as a peripheral)
+            format: str = self.cpu.peripheral.confirmFormat(address) # Returns R, W, RW or "" depending on if it can be read from, written to, both written to and read from or neither (If the address doesn't exist as a peripheral) # type: ignore
             if "W" not in format:
                 return # Stops you from writing to Read-Only formats
             # Otherwise continues and writes to ram
@@ -160,7 +160,7 @@ class memory:
         address = fixBits(address)
 
         if address > 0x3FFF and address < 0x8000:
-            format: str = self.cpu.peripheral.confirmFormat(address) # Returns R, W, RW or "" depending on if it can be read from, written to, both written to and read from or neither (If the address doesn't exist as a peripheral)
+            format: str = self.cpu.peripheral.confirmFormat(address) # Returns R, W, RW or "" depending on if it can be read from, written to, both written to and read from or neither (If the address doesn't exist as a peripheral) # type: ignore
             if "R" not in format:
                 return 0
 
