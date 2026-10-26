@@ -36,9 +36,11 @@ The number is the machine code and the command afterwards is the Assembly comman
 25. JLT x y ; Jumps to y (Condition bus) if x (Data bus) is less than 0
 26. JNE x y ; Jumps to y (Condition bus) if x (Data bus) is not equal to 0
 27. JLE x y ; Jumps to y (Condition bus) if x (Data bus) is less than or equal to 0
-28. JMP x ; Jumps to y (Data bus)
+28. JMP x ; Jumps to x (Data bus)
 29. PUSH x ; Pushes x (Data bus) to the stack
 30. POP x ; Pops from the stack and places in x (Condition bus)
+31. JSR x ; Pushes current address to stack then jumps to x (Data bus)
+32. RSR ; Pops return address from stack then jumps back to return address
 
 
 ## OPERANDS:

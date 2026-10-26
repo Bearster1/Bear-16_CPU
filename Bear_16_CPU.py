@@ -262,6 +262,8 @@ class CPU:
 
             case 29: pass # PUSH x ; Pushes x (Data bus) to the stack
             case 30: pass # POP x ; Pops from the stack and places in x (Condition bus)
+            case 31: pass # JSR x ; Pushes current address to stack then jumps to x (Data Bus)
+            case 32: pass # RSR ; Pops return address from stack then jumps bback to return address
             
 
 def main():
