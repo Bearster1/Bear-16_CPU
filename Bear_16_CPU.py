@@ -250,47 +250,73 @@ class CPU:
             case 0: return # NOP
 
 
-            case 1: pass # LDR x y ; Loads y (Data bus) into register x (Condition bus)
-            case 2: pass # LDM x y ; Loads value at memory address y (Data bus) into register x (Condition bus)
-            case 3: pass # STM x y ; Loads value in register x (Condition bus) into memory address y (Data bus)
-            case 4: pass # STM x y ; Loads value in register x (Data bus) into memory address y (Condition bus) ; The name of this command is subject to change
+            case 1: self.condition_bus.store(self.data_bus.read()) # LDR x y ; Loads y (Data bus) into register x (Condition bus)
+            case 2: self.condition_bus.store(self.memory.read(self.data_bus.read())) # LDM x y ; Loads value at memory address y (Data bus) into register x (Condition bus)
+            case 3: self.memory.store(self.condition_bus.read(), self.data_bus.read()) # STM x y ; Loads value in register x (Condition bus) into memory address y (Data bus)
+            case 4: self.memory.store(self.data_bus.read(), self.condition_bus.read()) # STM x y ; Loads value in register x (Data bus) into memory address y (Condition bus) ; The name of this command is subject to change
 
 
-            case 5: pass # ADD x ; Adds x (Data bus) to Accumulator
-            case 6: pass # ADDC x ; Adds x (Data bus) and Carry to Accumulator
-            case 7: pass # SUB x ; Subtracts x (Data bus) from Accumulator
-            case 8: pass # SUBC x ; Subtracts x (Data bus) and Carry from Accumulator
-            case 9: pass # NEG ; Negates the accumulator
-            case 10: pass # AND x ; ANDs x (Data bus) and Accumulator
-            case 11: pass # OR ; ORs x (Data bus) and Accumulator
-            case 12: pass # NOT ; NOTs the Accumulator
-            case 13: pass # XOR ; XORs x (Data bus) and Accumulator
-            case 14: pass # LTS ; Left Shifts the Acc
-            case 15: pass # RTS ; Right Shifts the Acc
+            case 5: self.acc.add(self.data_bus) # ADD x ; Adds x (Data bus) to Accumulator
+            case 6: self.acc.addc(self.data_bus) # ADDC x ; Adds x (Data bus) and Carry to Accumulator
+            case 7: self.acc.sub(self.data_bus) # SUB x ; Subtracts x (Data bus) from Accumulator
+            case 8: self.acc.subc(self.data_bus) # SUBC x ; Subtracts x (Data bus) and Carry from Accumulator
+            case 9: self.acc.neg() # NEG ; Negates the accumulator
+            case 10: self.acc.bitwiseAnd(self.data_bus) # AND x ; ANDs x (Data bus) and Accumulator
+            case 11: self.acc.bitwiseOr(self.data_bus) # OR ; ORs x (Data bus) and Accumulator
+            case 12: self.acc.bitwiseNot() # NOT ; NOTs the Accumulator
+            case 13: self.acc.bitwiseXor(self.data_bus) # XOR ; XORs x (Data bus) and Accumulator
+            case 14: self.acc.leftShift() # LTS ; Left Shifts the Acc
+            case 15: self.acc.rightShift() # RTS ; Right Shifts the Acc
 
 
-            case 16: pass # JGT x y ; Jumps to y (Data bus) if x (Condition bus) is greater than 0
-            case 17: pass # JEQ x y ; Jumps to y (Data bus) if x (Condition bus) is equal to 0
-            case 18: pass # JGE x y ; Jumps to y (Data bus) if x (Condition bus) is greater than or equal to 0
-            case 19: pass # JLT x y ; Jumps to y (Data bus) if x (Condition bus) is less than 0
-            case 20: pass # JNE x y ; Jumps to y (Data bus) if x (Condition bus) is not equal to 0
-            case 21: pass # JLE x y ; Jumps to y (Data bus) if x (Condition bus) is less than or equal to 0
+            case 16: # JGT x y ; Jumps to y (Data bus) if x (Condition bus) is greater than 0
+                if self.condition_bus.read() > 0 and self.condition_bus.read() < 0x8000:
+                    self.PC.store(self.data_bus.read())
+            case 17: # JEQ x y ; Jumps to y (Data bus) if x (Condition bus) is equal to 0
+                if self.condition_bus.read() == 0:
+                    self.PC.store(self.data_bus.read())
+            case 18: # JGE x y ; Jumps to y (Data bus) if x (Condition bus) is greater than or equal to 0
+                if (self.condition_bus.read() > 0 and self.condition_bus.read() < 0x8000) or self.condition_bus.read() == 0:
+                    self.PC.store(self.data_bus.read())
+            case 19: # JLT x y ; Jumps to y (Data bus) if x (Condition bus) is less than 0
+                if self.condition_bus.read() < 0x7FFF:
+                    self.PC.store(self.data_bus.read())
+            case 20: # JNE x y ; Jumps to y (Data bus) if x (Condition bus) is not equal to 0
+                if self.condition_bus.read() != 0:
+                    self.PC.store(self.data_bus.read())
+            case 21: # JLE x y ; Jumps to y (Data bus) if x (Condition bus) is less than or equal to 0
+                if self.condition_bus.read() < 0x7FFF or self.condition_bus.read() == 0:
+                    self.PC.store(self.data_bus.read())
 
-            case 22: pass # JGT x y ; Jumps to y (Condition bus) if x (Data bus) is greater than 0
-            case 23: pass # JEQ x y ; Jumps to y (Condition bus) if x (Data bus) is equal to 0
-            case 24: pass # JGE x y ; Jumps to y (Condition bus) if x (Data bus) is greater than or equal to 0
-            case 25: pass # JLT x y ; Jumps to y (Condition bus) if x (Data bus) is less than 0
-            case 26: pass # JNE x y ; Jumps to y (Condition bus) if x (Data bus) is not equal to 0
-            case 27: pass # JLE x y ; Jumps to y (Condition bus) if x (Data bus) is less than or equal to 0
+            case 22: # JGT x y ; Jumps to y (Condition bus) if x (Data bus) is greater than 0
+                if self.data_bus.read() > 0 and self.data_bus.read() < 0x8000:
+                    self.PC.store(self.condition_bus.read())
+            case 23: # JEQ x y ; Jumps to y (Condition bus) if x (Data bus) is equal to 0
+                if self.data_bus.read() == 0:
+                    self.PC.store(self.condition_bus.read())
+            case 24: # JGE x y ; Jumps to y (Condition bus) if x (Data bus) is greater than or equal to 0
+                if (self.data_bus.read() > 0 and self.data_bus.read() < 0x8000) or self.data_bus.read() == 0:
+                    self.PC.store(self.condition_bus.read())
+            case 25: # JLT x y ; Jumps to y (Condition bus) if x (Data bus) is less than 0
+                if self.data_bus.read() < 0x7FFF:
+                    self.PC.store(self.condition_bus.read())
+            case 26: # JNE x y ; Jumps to y (Condition bus) if x (Data bus) is not equal to 0
+                if self.data_bus.read() != 0:
+                    self.PC.store(self.condition_bus.read())
+            case 27: # JLE x y ; Jumps to y (Condition bus) if x (Data bus) is less than or equal to 0
+                if self.data_bus.read() < 0x7FFF or self.condition_bus.read() == 0:
+                    self.PC.store(self.condition_bus.read())
             
-            case 28: pass # JMP x ; Jumps to y (Data bus)
+            case 28: self.PC.store(self.data_bus.read()) # JMP x ; Jumps to y (Data bus)
 
 
-            case 29: pass # PUSH x ; Pushes x (Data bus) to the stack
-            case 30: pass # POP x ; Pops from the stack and places in x (Condition bus)
-            case 31: pass # JSR x ; Pushes current address to stack then jumps to x (Data Bus)
-            case 32: pass # RSR ; Pops return address from stack then jumps bback to return address
-            
+            case 29: self.stackPointer.push(self.data_bus.read()) # PUSH x ; Pushes x (Data bus) to the stack
+            case 30: self.condition_bus.store(self.stackPointer.pop()) # POP x ; Pops from the stack and places in x (Condition bus)
+            case 31: # JSR x ; Pushes current address to stack then jumps to x (Data Bus)
+                self.stackPointer.push(self.PC.read())
+                self.PC.store(self.data_bus.read())
+            case 32: # RSR ; Pops return address from stack then jumps back to return address
+                self.PC.store(self.stackPointer.pop())
 
 def main():
     print("Welcome to the Bear-16 CPU Emulator")
