@@ -214,10 +214,36 @@ class CPU:
         #   Bits C + D + E = Register 1 also called the condition bus: r0, r1, r2, r3, r4, r5, r6, acc (This is the register used for writing)
         #   Bits F + G + H = Register 2 also called the data bus: r0, r1, r2, r3, r4, r5, r6, acc (This is the register used for reading, it is replaced by data type)
 
-        if self.operand >> 6 == 1:
-            self.immediate = True
-        else:
-            self.immediate = False
+        self.immediate = False
+        data_type = self.operand >> 6
+        match data_type:
+            case 1:
+                self.immediate = True
+                self.data_bus = self.MDR
+            case 2: self.data_bus = self.carry
+            case 3: self.data_bus = self.PC
+            case _:
+                register2 = fixBits(self.operand, 3)
+                match register2:
+                    case 0: self.data_bus = self.r0
+                    case 1: self.data_bus = self.r1
+                    case 2: self.data_bus = self.r2
+                    case 3: self.data_bus = self.r3
+                    case 4: self.data_bus = self.r4
+                    case 5: self.data_bus = self.r5
+                    case 6: self.data_bus = self.r6
+                    case 7: self.data_bus = self.acc
+
+        register1 = fixBits(self.operand >> 3, 3)
+        match register1:
+            case 0: self.condition_bus = self.r0
+            case 1: self.condition_bus = self.r1
+            case 2: self.condition_bus = self.r2
+            case 3: self.condition_bus = self.r3
+            case 4: self.condition_bus = self.r4
+            case 5: self.condition_bus = self.r5
+            case 6: self.condition_bus = self.r6
+            case 7: self.condition_bus = self.acc
 
     def execute(self) -> None:
         match self.opcode:
