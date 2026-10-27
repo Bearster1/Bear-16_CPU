@@ -318,6 +318,16 @@ class CPU:
             case 32: # RSR ; Pops return address from stack then jumps back to return address
                 self.PC.store(self.stackPointer.pop())
 
+    def loadROM(self) -> None:
+        with open("Bear-16_CPU/Software/Binary/ROM.bin", "r") as ROM:
+            program = ROM.read()
+            for i in range(32768):
+                word = ""
+                for nibble in range(4):
+                    word += program[i * 4 + nibble]
+                word = int(word, 16)
+                self.memory.writeROM(word, i + 0x8000)
+
 def main():
     print("Welcome to the Bear-16 CPU Emulator")
 
