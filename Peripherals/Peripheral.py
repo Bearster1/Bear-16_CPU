@@ -1,6 +1,6 @@
 # noqa: N999
-import Peripherals.keyboardInput as keyboardInput
-import Peripherals.terminal as terminal
+import Peripherals.keyboardInput as keyboardInput  # noqa: PLR0402
+import Peripherals.terminal as terminal  # noqa: PLR0402
 
 
 class peripheral:
