@@ -332,14 +332,15 @@ class CPU:
                 word = int(word, 16)
                 self.memory.writeROM(word, i + 0x8000)
 
-cpu = CPU()
-cpu.loadROM()
-while True:
-    cpu.fetch()
-    cpu.execute()
-
 def main():
     print("Welcome to the Bear-16 CPU Emulator")
+
+    # Load the CPU
+    cpu = CPU()
+    cpu.loadROM()
+    while True:
+        cpu.fetch()
+        cpu.execute()
 
 if __name__ == "__main__":
     main()
