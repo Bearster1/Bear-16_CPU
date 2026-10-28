@@ -1,6 +1,6 @@
 # noqa: N999
-import keyboardInput
-import terminal
+import Peripherals.keyboardInput as keyboardInput
+import Peripherals.terminal as terminal
 
 
 class peripheral:

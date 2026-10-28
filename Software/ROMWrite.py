@@ -14,6 +14,8 @@ def writeROM():
         0x6002,
         0x0148, # LDR r1 i6003
         0x6003,
+        0x0150, # LDR r2 i7000
+        0x7000,
 
         0x0440, # STM CHARACTER r0
         0x0048,
@@ -63,8 +65,27 @@ def writeROM():
         0x0021,
         0x0448, # STM i0001 r1
         0x0001,
-        0x1C40, # JMP i803C
-        0x8033
+        
+        0x023A, # LDM acc r2
+        0x1178, # JEQ acc i8035
+        0x8035,
+        0x0540, # ADD i0016
+        0x0016,
+        0x0407, # STM acc r0
+        0x0448, # STM i0001 r1
+        0x0001,
+        0x013A, # LDR acc r2
+        0x0540, # ADD i0001
+        0x0001,
+        0x010F, # LDR r2 acc
+
+        0x0402, # STM r2 r0
+        0x0021,
+        0x0448, # STM i0001 r1
+        0x0001,
+
+        0x1C40, # JMP i8035
+        0x8035
     ]
 
     for index in range(len(words)):
