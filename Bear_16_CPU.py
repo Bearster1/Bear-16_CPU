@@ -153,6 +153,8 @@ class memory:
             if "W" not in format:
                 return # Stops you from writing to Read-Only formats
             # Otherwise continues and writes to ram
+
+            self.cpu.peripheral.sendData(data, address) # type: ignore
             
         self.data[address] = data
 
@@ -169,7 +171,7 @@ class memory:
 # CPU
 class CPU:
     def __init__(self):
-        self.peripheral = Peripheral.peripheral(self)
+        self.peripheral = Peripheral.peripheral()
 
         #   Define Registers and Memory
         self.memory = memory(self)
