@@ -166,6 +166,8 @@ class memory:
             if "R" not in format:
                 return 0
 
+            return self.cpu.peripheral.readData(address) # type: ignore 
+
         return self.data[address]
 
 # CPU

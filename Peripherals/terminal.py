@@ -15,6 +15,9 @@ class terminal:
         self.datas[dataAdd] = data
         self.execute()
 
+    def readData(self, dataAdd: int) -> int:
+        return 0x0000
+
     def execute(self) -> None:
         if self.datas[self.clockAdd] != 0:
             output = chr(self.datas[self.dataAdd])
