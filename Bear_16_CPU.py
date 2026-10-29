@@ -283,13 +283,13 @@ class CPU:
                 if (self.condition_bus.read() > 0 and self.condition_bus.read() < 0x8000) or self.condition_bus.read() == 0:
                     self.PC.store(self.data_bus.read())
             case 19: # JLT x y ; Jumps to y (Data bus) if x (Condition bus) is less than 0
-                if self.condition_bus.read() < 0x7FFF:
+                if self.condition_bus.read() > 0x7FFF:
                     self.PC.store(self.data_bus.read())
             case 20: # JNE x y ; Jumps to y (Data bus) if x (Condition bus) is not equal to 0
                 if self.condition_bus.read() != 0:
                     self.PC.store(self.data_bus.read())
             case 21: # JLE x y ; Jumps to y (Data bus) if x (Condition bus) is less than or equal to 0
-                if self.condition_bus.read() < 0x7FFF or self.condition_bus.read() == 0:
+                if self.condition_bus.read() > 0x7FFF or self.condition_bus.read() == 0:
                     self.PC.store(self.data_bus.read())
 
             case 22: # JGT x y ; Jumps to y (Condition bus) if x (Data bus) is greater than 0
@@ -302,13 +302,13 @@ class CPU:
                 if (self.data_bus.read() > 0 and self.data_bus.read() < 0x8000) or self.data_bus.read() == 0:
                     self.PC.store(self.condition_bus.read())
             case 25: # JLT x y ; Jumps to y (Condition bus) if x (Data bus) is less than 0
-                if self.data_bus.read() < 0x7FFF:
+                if self.data_bus.read() > 0x7FFF:
                     self.PC.store(self.condition_bus.read())
             case 26: # JNE x y ; Jumps to y (Condition bus) if x (Data bus) is not equal to 0
                 if self.data_bus.read() != 0:
                     self.PC.store(self.condition_bus.read())
             case 27: # JLE x y ; Jumps to y (Condition bus) if x (Data bus) is less than or equal to 0
-                if self.data_bus.read() < 0x7FFF or self.condition_bus.read() == 0:
+                if self.data_bus.read() > 0x7FFF or self.condition_bus.read() == 0:
                     self.PC.store(self.condition_bus.read())
             
             case 28: self.PC.store(self.data_bus.read()) # JMP x ; Jumps to y (Data bus)
