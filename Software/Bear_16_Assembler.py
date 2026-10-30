@@ -33,6 +33,7 @@ import shlex  # noqa: N999
 # You do the same with string as with characters
 
 # If you want to have a \ as just a character in zstrings you have to do 4 \ such as "\\\\"
+# In regular characters you have to do 2 \ such as "\\"
 
 def base(number: str) -> int:
     number = number.strip()

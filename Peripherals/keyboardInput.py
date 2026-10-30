@@ -114,7 +114,7 @@ class keyboardInput:
             case "/": key = 0x0057
             case "*": key = 0x0058
             case "+": key = 0x0059
-            case "decimal": key = 0x005
+            case "decimal": key = 0x005A
             case _: key = 0x0000
 
         self.datas[self.keyPointer] = key
