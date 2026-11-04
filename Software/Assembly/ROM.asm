@@ -15,7 +15,7 @@ KeyboardEnd         = $7100
 .org $8000
 
 ; Code conventions:
-; Variables and Bitmaps are named using Pascal Case
+; Variables, zstrings and Bitmaps are named using Pascal Case
 ; Subroutines are named using Camel Case
 ; For things where it is either True or False use $FFFF for True and $0000 for False
 
@@ -23,6 +23,10 @@ start:
     LDR r0 KeyboardStart
     STM r0 KeyboardPointer ; Settup the KeyboardPointer
 
+    PUSH NewLine
+    JSR printString
+
+    PUSH $0000
 main:
     JSR keyboard
 
@@ -31,13 +35,55 @@ main:
     POP r0 ; Prevents writing of Null to the screen
     JEQ r0 main
     PUSH r0
+    PUSH r0
 
     JSR outChar
+
+    JSR commands
 
     JMP main
 
 loop:
     JMP loop
+
+
+commands:
+    POP r0 ; This holds the return address
+    POP r1 ; This holds the pressed key
+
+    LDR acc r1 ; Jump to no enter if value isn't Enter
+    SUB $000A
+    JNE acc commandNoEnter
+
+    ; This is enter true:
+
+    POP acc ; This holds the second pressed key
+    SUB "1"
+
+    PUSH r0
+    JEQ acc command1
+
+commandReturn:
+    PUSH NewLine
+    JSR printString
+
+    POP r0
+
+    JMP commandEnd
+
+commandNoEnter:
+    PUSH r1 ; Add the pressed key to the stack
+
+commandEnd:
+    PUSH r0 ; Push the return address
+    
+    RSR
+
+command1:
+    PUSH Message
+    JSR printString
+
+    JMP commandReturn
 
 specialCharFix:
     POP r0
@@ -340,5 +386,20 @@ KeyboardMap: ; This map will work where the first byte is the shifted character 
 .word $2B2B ; +
 .word $2E2E ; .
 
-message:
-.zstring "Hello, World!"
+Message:
+.zstring "Hello, World!\n"
+NewLine:
+.zstring "> "
+
+
+debug:
+    PUSH r0
+    PUSH r1
+
+    PUSH "@"
+    JSR outChar
+
+    POP r1
+    POP r0
+
+    RSR

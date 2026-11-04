@@ -222,7 +222,16 @@ def cleanse(instructions: list[str]) -> list[int]:
         if ".org" in instruction:
             lineNum = base(instruction.split(" ")[-1])
         elif ".zstring" in instruction:
-            lineNum += len(instruction.split(" ")) + 1
+            string = shlex.split(instruction)[-1]
+            slash = False
+            for character in string:
+                if character == "\\" and not slash:
+                    slash = not slash
+                    continue
+
+                lineNum += 1
+                slash = False
+            lineNum += 1 # Add one to compensate for the 0
         elif ".word" in instruction:
             lineNum += 1
 
