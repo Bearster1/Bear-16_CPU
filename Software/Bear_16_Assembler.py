@@ -35,6 +35,8 @@ import shlex  # noqa: N999
 # If you want to have a \ as just a character in zstrings you have to do 4 \ such as "\\\\"
 # In regular characters you have to do 2 \ such as "\\"
 
+# To do ESC in characters and zstrings you do \e
+
 def base(number: str) -> int:
     number = number.strip()
     if number[0] == "$":
@@ -104,6 +106,8 @@ def decode(instruction: str, labels: dict, consts: dict) -> (int, int) | (int, N
             char = shlex.split(data_bus)[0]
             if char == '\\n':
                 immediate = 10
+            elif char == '\\e':
+                immediate = 27
             else:
                 immediate = ord(char)
         else:
@@ -232,9 +236,9 @@ def cleanse(instructions: list[str]) -> list[int]:
             if dataBus not in nonImmediates and len(parts) > 1:
                 lineNum += 1
             lineNum += 1
-        elif instruction[-1] == ":":
+        elif instruction.strip()[-1] == ":":
             # Label
-            name = instruction[:-1].strip()
+            name = instruction.strip()[:-1].strip()
             labels[name] = lineNum
             continue
 
@@ -256,6 +260,8 @@ def cleanse(instructions: list[str]) -> list[int]:
                     continue
                 elif character == "n" and slash:
                     character = 10
+                elif character == "e" and slash:
+                    character = 27
                 else:
                     character = ord(character)
                 decodedInstructions[lineNum - 0x8000] = fixBits(character)
@@ -264,9 +270,8 @@ def cleanse(instructions: list[str]) -> list[int]:
             decodedInstructions[lineNum - 0x8000] = 0x0000
             lineNum += 1
         elif ".word" in instruction:
-            word = instruction.split(" ")[-1]
-
-            decodedInstructions[lineNum - 0x8000] = fixBits(word)
+            word = instruction.strip().split(" ")[-1]
+            decodedInstructions[lineNum - 0x8000] = base(word)
             lineNum += 1
 
         else:
