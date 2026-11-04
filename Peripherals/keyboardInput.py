@@ -122,3 +122,5 @@ class keyboardInput:
 
         if self.keyPointer >= self.dataEndAdd:
             self.keyPointer = self.dataStartAdd
+            for address in range(self.dataStartAdd, self.dataEndAdd):
+                self.datas[address] = 0x0000
