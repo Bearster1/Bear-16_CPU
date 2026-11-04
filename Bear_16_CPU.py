@@ -85,7 +85,6 @@ class stackPointer(register):
         returnData = self.mem.read(fixBits(self.data)) # type: ignore
 
         if self.data < self.stackStart:
-            print("?")
             self.data = fixBits(self.stackStart + self.stackSize - 1)
 
         return fixBits(returnData)

@@ -63,6 +63,10 @@ commands:
     PUSH r0
     JEQ acc command1
 
+    PUSH r0
+    PUSH commandFail
+    JSR printString
+
 commandReturn:
     PUSH NewLine
     JSR printString
@@ -84,6 +88,7 @@ command1:
     JSR printString
 
     JMP commandReturn
+
 
 specialCharFix:
     POP r0
@@ -388,6 +393,8 @@ KeyboardMap: ; This map will work where the first byte is the shifted character 
 
 Message:
 .zstring "Hello, World!\n"
+commandFail:
+.zstring "This is not a recognised command!\n"
 NewLine:
 .zstring "> "
 
