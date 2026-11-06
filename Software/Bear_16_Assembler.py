@@ -37,6 +37,24 @@ import shlex  # noqa: N999
 
 # To do ESC in characters and zstrings you do \e
 
+def word(number: str, labels: dict, consts: dict) -> int:
+    if number in labels:
+        return labels[number]
+    elif number in consts:
+        return consts[number]
+    elif "'" in number or '"' in number:
+        char = shlex.split(number)[0]
+        if char == '\\b':
+            return 8
+        elif char == '\\n':
+            return 10
+        elif char == '\\e':
+            return 27
+        else:
+            return ord(char)
+    else:
+        return base(number)
+
 def base(number: str) -> int:
     number = number.strip()
     if number[0] == "$":
@@ -98,20 +116,7 @@ def decode(instruction: str, labels: dict, consts: dict) -> (int, int) | (int, N
         data_type = 0xC0
     elif data_bus != "NONE":
         data_type = 0x40
-        if data_bus in labels:
-            immediate = labels[data_bus]
-        elif data_bus in consts:
-            immediate = consts[data_bus]
-        elif "'" in data_bus or '"' in data_bus:
-            char = shlex.split(data_bus)[0]
-            if char == '\\n':
-                immediate = 10
-            elif char == '\\e':
-                immediate = 27
-            else:
-                immediate = ord(char)
-        else:
-            immediate = base(data_bus)
+        immediate = word(data_bus, labels, consts)
     operand += data_type
 
     match condition_bus.lower():
@@ -279,8 +284,8 @@ def cleanse(instructions: list[str]) -> list[int]:
             decodedInstructions[lineNum - 0x8000] = 0x0000
             lineNum += 1
         elif ".word" in instruction:
-            word = instruction.strip().split(" ")[-1]
-            decodedInstructions[lineNum - 0x8000] = base(word)
+            value = instruction.strip().split(" ")[-1]
+            decodedInstructions[lineNum - 0x8000] = word(value, labels, consts)
             lineNum += 1
 
         else:

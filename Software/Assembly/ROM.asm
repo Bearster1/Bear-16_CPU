@@ -1,6 +1,13 @@
 KeyboardPointer     = $0000
 ShiftFlag           = $0001
 
+StackStart          = $0100
+StackEnd            = $0200
+
+PrintStackPointer   = $02FF
+PrintStackStart     = $0300
+PrintStackEnd       = $0400
+
 TermOut             = $6002
 TermClock           = $6003
 
@@ -12,6 +19,9 @@ MemoryClock         = $6015
 KeyboardStart       = $7000
 KeyboardEnd         = $7100
 
+
+CommandCount        = $0002 ; This is the number of commands in the bios | This is a constant number not an address
+
 .org $8000
 
 ; Code conventions:
@@ -22,11 +32,15 @@ KeyboardEnd         = $7100
 start:
     LDR r0 KeyboardStart
     STM r0 KeyboardPointer ; Settup the KeyboardPointer
+    
+    LDR r0 PrintStackStart
+    STM r0 PrintStackPointer ; Settup the PrintStackPointer
 
+    PUSH BootupMessage
+    JSR printStringLine
     PUSH NewLine
     JSR printString
 
-    PUSH $0000
 main:
     JSR keyboard
 
@@ -34,12 +48,12 @@ main:
 
     POP r0 ; Prevents writing of Null to the screen
     JEQ r0 main
+    
     PUSH r0
-    PUSH r0
-
+    PUSH r0 ; Push duplicate
     JSR outChar
 
-    JSR commands
+    JSR commandCheck
 
     JMP main
 
@@ -47,47 +61,256 @@ loop:
     JMP loop
 
 
-commands:
-    POP r0 ; This holds the return address
-    POP r1 ; This holds the pressed key
+commandOUT:
+    PUSH Message
+    JSR printStringLine
 
-    LDR acc r1 ; Jump to no enter if value isn't Enter
-    SUB $000A
-    JNE acc commandNoEnter
+    RSR
 
-    ; This is enter true:
+commandSEE:
+    PUSH Message2
+    JSR printStringLine
 
-    POP acc ; This holds the second pressed key
-    SUB "1"
+    RSR
 
-    PUSH r0
-    JEQ acc command1
 
-    PUSH r0
-    PUSH commandFail
-    JSR printString
+commandCheck:
+    POP r1
+    POP r0
+    PUSH r1
 
-commandReturn:
+    LDR acc r0
+    SUB "\n"
+    JNE acc commandCheckEscapeNonEnter
+
+    LDR r1 Commands ; this holds the first command
+    LDR r2 CommandCount ; This holds the number of commands (And therefore the number of time to loop)
+
+commandCheckLoop:
+    PUSH r1 ; Save r1
+    PUSH r2 ; Save r2
+
+    PUSH PrintStackStart
+    PUSH r1
+    JSR compareStrings
+    POP r0
+
+    POP r2 ; Bring r2 back
+    POP r1 ; Bring r1 back
+
+    PUSH r0 ; Save r0
+    PUSH r2 ; Save r2
+    PUSH r1 ; This is the current command so you can find the next command
+
+    JSR findStringEnd
+
+    POP acc ; Grab the end of the string
+    POP r2 ; Restore r2
+    POP r0 ; Restore r0
+
+    ADD $0001 ; add 1 so it gets to the next command
+    LDR r1 acc
+
+    LDR acc r2
+    SUB $0001 ; Decrement r2 (Loop index)
+    LDR r2 acc
+
+    NOT ; Not the acc
+    AND r0
+    JNE acc commandCheckSucceed
+
+    JNE r2 commandCheckLoop
+
+commandCheckFail:
+    PUSH CommandFail
+    JSR printStringLine
+
+    JMP commandCheckEscape
+
+commandCheckSucceed:
+    LDR acc CommandCount ; Grab command count
+    SUB r2 ; Subtract r2 to get the index of commands
+    SUB $0001 ; Subtract 1 to get to the 0 based index.
+    ADD CommandMap ; Add to get to the command map position
+    
+    LDM r0 acc ; Grab the command jump address from the input.
+
+    JSR r0
+
+    JMP commandCheckEscape
+
+commandCheckEscape:
+    JSR printStackReset
+
     PUSH NewLine
     JSR printString
 
-    POP r0
-
-    JMP commandEnd
-
-commandNoEnter:
-    PUSH r1 ; Add the pressed key to the stack
-
-commandEnd:
-    PUSH r0 ; Push the return address
-    
     RSR
 
-command1:
-    PUSH Message
+commandCheckEscapeNonEnter:
+    PUSH r0
+
+    JSR printStackPush
+    RSR
+
+
+printStackReset:
+    LDR r0 PrintStackStart ; Use r0 as the index pointer
+    STM r0 PrintStackPointer ; Re-settup the PrintStackPointer
+
+printStackResetLoop:
+    *STM r0 $0000 ; Set to 0
+
+    LDR acc r0 ; Increment r0
+    ADD $0001
+    LDR r0 acc
+
+    LDR acc PrintStackEnd ; Load end to acc
+    SUB r0 ; Subtract to figure out where we are
+    JNE acc printStackResetLoop ; Jump back if not at the end
+
+    RSR
+
+printStackBackspaceHandler:
+    JSR printStackPop
+    POP r0
+
+    RSR
+
+printStackPush:
+    POP r0
+    POP r1 ; This is the data to push
+    PUSH r0
+
+    LDR acc r1
+    SUB $0008 ; Subtract backspace key
+    JEQ acc printStackBackspaceHandler
+
+    LDM acc PrintStackPointer
+    STM r1 acc
+
+    ADD $0001
+    AND $00FF
+    ADD PrintStackStart
+
+    STM acc PrintStackPointer
+
+    RSR
+
+printStackPop:
+    LDM acc PrintStackPointer
+
+    SUB $0001
+    AND $00FF
+    ADD PrintStackStart
+
+    STM acc PrintStackPointer
+
+    LDM r1 acc ; Grab the data
+    *STM acc $0000 ; Set data to 0
+
+    POP r0
+    PUSH r1
+    PUSH r0
+
+    RSR
+
+printStackPrint:
+    PUSH PrintStackStart
     JSR printString
 
-    JMP commandReturn
+
+lenString:
+    ; This finds the length of a string and returns it
+    POP r0
+    POP r1 ; This is the address of the string
+
+    LDR r2 $0000 ; This holds the amount of characters in the string
+lenStringLoop:
+    LDM acc r1
+    JEQ acc lenStringEnd
+
+    LDR acc r2
+    ADD $0001
+    LDR r2 acc
+
+    LDR acc r1
+    ADD $0001
+    LDR r1 acc
+
+    JMP lenStringLoop
+
+lenStringEnd:
+    PUSH r2
+    PUSH r0 ; Returns the return address
+
+    RSR
+
+
+compareStrings:
+    ; This compares two strings
+    POP r0
+    POP r1 ; This is the First string
+    POP r2 ; This is the Second string
+    PUSH r0
+
+    PUSH r1 ; This is the First string
+    PUSH r2 ; This is the Second string
+    PUSH r1; Push a duplicate
+    PUSH r2; Push a duplicate
+    
+    JSR lenString
+
+    POP r0 ; This is the result of lenString
+    POP acc ; This is the First String
+    PUSH r0 ; Put lenString below First String
+    PUSH acc ; Put the second string on the top to be used by the next lenString
+
+    JSR lenString
+    POP acc ; This holds the result of second lenString
+    POP r0 ; This holds the result of first lenString
+
+    SUB r0 ; Subtract the two lenStrings
+
+    POP r1
+    POP r2
+    JNE acc compareStringFail
+
+    LDR r3 $0000 ; Load r3 with 0 as the index pointer
+
+compareStringLoop:
+    LDR acc r1 ; Load first character ; Put start address into acc
+    ADD r3 ; Add index pointer
+    LDM r4 acc ; Load r4 with data at address acc
+
+    LDR acc r2 ; Load second character
+    ADD r3
+    LDM acc acc
+    
+    SUB r4 ; Compare by subtraction
+    JNE acc compareStringFail
+
+    LDR acc r3 ; Increment r3
+    ADD $0001
+    LDR r3 acc
+
+    SUB r0 ; Subtract r0 to see how many characters are left and jump if not zero
+    JNE acc compareStringLoop
+
+    ; If haven't gone to compareStringFail that means it is true.
+compareStringSuceed:
+    POP r0
+    PUSH $FFFF
+    PUSH r0
+
+    RSR
+
+compareStringFail:
+    POP r0
+    PUSH $0000
+    PUSH r0
+
+    RSR
 
 
 specialCharFix:
@@ -111,12 +334,31 @@ specialCharTrue:
     RSR
 
 
+findStringEnd:
+    POP r0
+    POP acc ; This is the string
+    PUSH r0
+
+findStringEndLoop:
+    LDM r1 acc
+    JEQ r1 findStringEndEnd
+
+    ADD $0001
+
+    JMP findStringEndLoop
+
+findStringEndEnd:
+    POP r0
+    PUSH acc
+    PUSH r0
+
+    RSR
+
 outChar:
     POP r0
     POP r1 ; This is the character to output
     PUSH r0
 
-.word $FF01
     STM r1 TermOut
     
     LDR r1 $FFFF
@@ -124,14 +366,21 @@ outChar:
 
     RSR
 
+printStringLine:
+    ; This subroutine is to print string and a new line
+    LDR r2 printStringLineEnd
+    JMP printStringContinue
+
 printString:
+    LDR r2 printStringEnd
+printStringContinue:
     POP r0
     POP acc ; This is the address of the string to output
     PUSH r0
 
 printStringLoop:
     LDM r1 acc ; This takes the current character and places it into r1
-    JEQ r1 printStringEnd
+    JEQ r1 r2
 
     ADD $0001
 
@@ -143,6 +392,10 @@ printStringLoop:
     JMP printStringLoop
 
 printStringEnd:
+    RSR
+printStringLineEnd:
+    PUSH "\n"
+    JSR outChar
     RSR
 
 
@@ -391,12 +644,24 @@ KeyboardMap: ; This map will work where the first byte is the shifted character 
 .word $2B2B ; +
 .word $2E2E ; .
 
+BootupMessage:
+.zstring "Bear-BIOS"
 Message:
-.zstring "Hello, World!\n"
-commandFail:
-.zstring "This is not a recognised command!\n"
+.zstring "Hello, World!"
+Message2:
+.zstring "Goodbye, World!"
+CommandFail:
+.zstring "This is not a recognised command!"
 NewLine:
 .zstring "> "
+
+Commands: ; These are the command strings
+.zstring "OUT"
+.zstring "SEE"
+
+CommandMap: ; These are the command jump addresses
+.word commandOUT
+.word commandSEE
 
 
 debug:
