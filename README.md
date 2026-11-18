@@ -124,3 +124,35 @@ If you want to have a \ as just a character in zstrings you have to do 4 \ such 
 In regular characters you have to do 2 \ such as "\\"
 
 To do ESC in characters and zstrings you do \e
+
+
+
+
+
+# PERIPHERALS
+Peripherals are extra devices you can add to the CPU so you can have more functions.
+Currently there are 3 pre-made devices: Terminal, Keyboard and Secondary Memory
+
+
+## EDITING PERIPHERALS
+The address of a peripheral is configurable inside Peripheral.py
+This address has to be more than $3FFF and less than $8000
+
+
+## NEW PERIPHERALS
+These peripherals can be added multiple times due to the class structure of them allowing for more usage. For example you could add another secondary memory.
+To add a new peripheral you just need to import the module where it is held and then create a class of it inside the list.
+
+
+### REQUIREMENTS
+#### In every peripheral you must have 4 things otherwise it will not work. These 4 things are:
+A dictionary of the addresses and their condition (W for write, R for read, you can combine for both or leave out for neither) called addresses
+A dictionary of the addresses and their data called datas
+A function called "sendData" with the inputs of data and data address and output of None
+A function called "readData" with the input of data address and output of the data
+
+
+All inputs and outputs must be integers.
+
+## USING PERIPHERALS
+To use a peripheral you just need to reference it in the assembly code by grabbing data from and putting data into the addresses $4000 to $7FFF.
