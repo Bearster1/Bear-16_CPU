@@ -1,5 +1,4 @@
-.org $8000
-main:
+BBPLMain:
     LDR acc 5
     PUSH acc
     LDR acc 0
@@ -7,6 +6,7 @@ main:
     LDR acc 2
     PUSH acc
     JSR fibbonachi
+    RSR
 fibbonachi:
     POP r0
     POP r1

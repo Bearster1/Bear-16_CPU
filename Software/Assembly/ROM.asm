@@ -23,7 +23,7 @@ KeyboardStart       = $7000
 KeyboardEnd         = $7100
 
 
-CommandCount        = $0003 ; This is the number of commands in the bios | This is a constant number not an address
+CommandCount        = $0004 ; This is the number of commands in the bios | This is a constant number not an address
 
 .org $8000
 
@@ -76,14 +76,20 @@ commandSEE:
 
     RSR
 
-commandRUN:
+commandBEAR:
     PUSH BearStartupMessage
     JSR printStringLine
 
     JSR BearCode
 
     RSR
+commandBBPL:
+    PUSH BBPLStartupMessage
+    JSR printStringLine
 
+    JSR BearCode
+
+    RSR
 
 commandCheck:
     POP r1
@@ -663,6 +669,8 @@ Message2:
 .zstring "Goodbye, World!"
 BearStartupMessage:
 .zstring "Welcome to Bear:"
+BBPLStartupMessage:
+.zstring "Welcome to Basic Bear Programming Language:"
 CommandFail:
 .zstring "This is not a recognised command!"
 NewLine:
@@ -671,12 +679,14 @@ NewLine:
 Commands: ; These are the command strings
 .zstring "OUT"
 .zstring "SEE"
-.zstring "RUN"
+.zstring "BEAR"
+.zstring "BBPL"
 
 CommandMap: ; These are the command jump addresses
 .word commandOUT
 .word commandSEE
-.word commandRUN
+.word commandBEAR
+.word commandBBPL
 
 BearCode:
     ; Place the assembly code generated from the Bear Compiler here:
@@ -744,3 +754,43 @@ loop0End:
   push r0
   
   RSR
+
+BBPLCode:
+    ; Place the code generated from the BBPL compiler here:
+BBPLMain:
+    LDR acc 5
+    PUSH acc
+    LDR acc 0
+    PUSH acc
+    LDR acc 2
+    PUSH acc
+    JSR fibbonachi
+    POP r0
+
+.word $FF00
+    RSR
+fibbonachi:
+    POP r0
+    POP r1
+    POP r2
+    POP r3
+    PUSH r0
+    LDR acc r1
+    PUSH acc
+fibbonachiLoop0:
+    POP acc
+    JEQ acc fibbonachiLoop0end
+    SUB 1
+    PUSH acc
+    LDR r4 r3
+    LDR acc r2
+    ADD r3
+    LDR r3 acc
+    LDR r2 r4
+    JMP fibbonachiLoop0
+fibbonachiLoop0end:
+    POP r0
+    LDR acc r2
+    PUSH acc
+    PUSH r0
+    RSR

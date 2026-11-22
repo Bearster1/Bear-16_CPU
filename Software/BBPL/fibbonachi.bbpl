@@ -1,6 +1,7 @@
-.org $8000
-main:
+BBPLMain:
     call fibbonachi(5, 0, 2)
+
+    RSR
 
 function fibbonachi(r1, r2, r3):
     ; r1 is the NthTerm
