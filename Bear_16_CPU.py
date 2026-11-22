@@ -321,6 +321,8 @@ class CPU:
             case 32: # RSR ; Pops return address from stack then jumps back to return address
                 self.PC.store(self.stackPointer.pop())
 
+            case 0xFF: print(f"{self.data_bus.name}: {self.data_bus.read()}")
+
     def loadROM(self) -> None:
         with open("Bear-16_CPU/Software/Binary/ROM.bin", "r") as ROM:
             program = ROM.read()

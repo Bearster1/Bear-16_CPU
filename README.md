@@ -21,7 +21,7 @@ The number is the machine code and the command afterwards is the Assembly comman
 10. 0x0A AND x ; ANDs x (Data bus) and Accumulator
 11. 0x0B OR ; ORs x (Data bus) and Accumulator
 12. 0x0C NOT ; NOTs the Accumulator
-13. 0x0D XOR ; XORs x (Data bus) and Accumulator
+13. 0x0D XOR x ; XORs x (Data bus) and Accumulator
 14. 0x0E LTS ; Left Shifts the Acc
 15. 0x0F RTS ; Right Shifts the Acc
 16. 0x10 JGT x y ; Jumps to y (Data bus) if x (Condition bus) is greater than 0

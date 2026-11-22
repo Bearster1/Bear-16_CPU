@@ -1,0 +1,13 @@
+function fibbonachi(int NthTerm, int Term0, int Term1):
+    int Temp = 0
+    
+    for NthTerm:
+        Tempint = Term1 + ";"
+        Term1 = Term0 + Term1 ; this is a comment
+        Term0 = Temp
+    end
+    
+    return Term0
+end
+
+fibbonachi(5, 0, 1)

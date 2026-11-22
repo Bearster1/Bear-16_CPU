@@ -1,0 +1,15 @@
+.org $8000
+main:
+    call fibbonachi(5, 0, 2)
+
+function fibbonachi(r1, r2, r3):
+    ; r1 is the NthTerm
+    ; r2 is the zeroth term
+    ; r3 is the first term
+    for fibbonachiLoop0(r1):
+    LDR r4 r3
+    r3 = (r2 + r3)
+    LDR r2 r4
+    endfor fibbonachiLoop0()
+
+    return fibbonachi(r2)

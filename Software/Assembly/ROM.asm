@@ -8,6 +8,9 @@ PrintStackPointer   = $02FF
 PrintStackStart     = $0300
 PrintStackEnd       = $0400
 
+VariablesStart      = $0500
+VariablesEnd        = $0600
+
 TermOut             = $6002
 TermClock           = $6003
 
@@ -20,7 +23,7 @@ KeyboardStart       = $7000
 KeyboardEnd         = $7100
 
 
-CommandCount        = $0002 ; This is the number of commands in the bios | This is a constant number not an address
+CommandCount        = $0003 ; This is the number of commands in the bios | This is a constant number not an address
 
 .org $8000
 
@@ -70,6 +73,14 @@ commandOUT:
 commandSEE:
     PUSH Message2
     JSR printStringLine
+
+    RSR
+
+commandRUN:
+    PUSH BearStartupMessage
+    JSR printStringLine
+
+    JSR BearCode
 
     RSR
 
@@ -650,6 +661,8 @@ Message:
 .zstring "Hello, World!"
 Message2:
 .zstring "Goodbye, World!"
+BearStartupMessage:
+.zstring "Welcome to Bear:"
 CommandFail:
 .zstring "This is not a recognised command!"
 NewLine:
@@ -658,20 +671,76 @@ NewLine:
 Commands: ; These are the command strings
 .zstring "OUT"
 .zstring "SEE"
+.zstring "RUN"
 
 CommandMap: ; These are the command jump addresses
 .word commandOUT
 .word commandSEE
+.word commandRUN
 
+BearCode:
+    ; Place the assembly code generated from the Bear Compiler here:
+BearCodeMain:
+  push 5
+  push 0
+  push 1
+  JSR fibbonachi
+  pop r0
+.word $FF00
+  
+  RSR
 
-debug:
-    PUSH r0
-    PUSH r1
+fibbonachi:
+  pop r0
+  pop r1
+  STM r1 $0503
+  pop r1
+  STM r1 $0502
+  pop r1
+  STM r1 $0501
+  push r0
+  
+  LDM r1 $0500
+  push r1
+loop0Start:
+  pop r1
+  JEQ r1 loop0End
+  push r1
+  
+  LDM r1 $0502
+  push r1
+  
+  pop r1
+  STM r1 $0503
+  
+  LDM r1 $0501
+  push r1
+  LDM r1 $0502
+  push r1
 
-    PUSH "@"
-    JSR outChar
+  pop r1
+  pop acc
+  ADD r1
+  push acc
+  
+  pop r1
+  STM r1 $0502
+  
+  LDM r1 $0503
+  push r1
+  
+  pop r1
+  STM r1 $0501
+  
+  pop acc
+  SUB 1
+  push acc
+  JMP loop0Start
 
-    POP r1
-    POP r0
-
-    RSR
+loop0End:
+  LDM r1 $0501
+  pop r0
+  push r1
+  push r0
+  
+  RSR
