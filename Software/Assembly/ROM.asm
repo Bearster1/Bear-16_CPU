@@ -87,7 +87,7 @@ commandBBPL:
     PUSH BBPLStartupMessage
     JSR printStringLine
 
-    JSR BearCode
+    JSR BBPLCode
 
     RSR
 
@@ -694,13 +694,13 @@ BearCodeMain:
   push 5
   push 0
   push 1
-  JSR fibbonachi
+  JSR fibbonachiBear
   pop r0
 .word $FF00
   
   RSR
 
-fibbonachi:
+fibbonachiBear:
   pop r0
   pop r1
   STM r1 $0503
@@ -764,12 +764,9 @@ BBPLMain:
     PUSH acc
     LDR acc 2
     PUSH acc
-    JSR fibbonachi
-    POP r0
-
-.word $FF00
+    JSR fibbonachiBBPL
     RSR
-fibbonachi:
+fibbonachiBBPL:
     POP r0
     POP r1
     POP r2

@@ -18,7 +18,7 @@ while True:
     1) Use the Emulator
     2) Assemble a program
     3) Write the ROM
-    4) Compile a BBPL program (WORK IN PROGRESS)
+    4) Compile a BBPL program
     5) Compile a Bear program (WORK IN PROGRESS - UNUSABLE)
     """)
     option = input()

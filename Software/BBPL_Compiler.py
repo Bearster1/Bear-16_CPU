@@ -1,6 +1,5 @@
 import shlex  # noqa: N999
 
-
 # This is the BBPL compiler.
 
 # I am making this due to the difficulty of creating a much more advanced programming language like Bear.
@@ -69,13 +68,17 @@ def decode(fileName: str) -> list[str]:
 
             if specialLine:
                 decodedAssembly = decodeSpecial(line)
+                if decodedAssembly[0] == "FAIL":
+                    print("An error occurred when decoding special")
+                    return ["FAIL"]
                 for line in decodedAssembly:
                     assembly.append(line)
             else:
                 assembly.append(line)
     return assembly
 
-tokens = ["+", "-", "^", "|", "&", "<<", ">>", "_", "~"] # _ is for negate        
+tokens = ["+", "-", "^", "|", "&", "<<", ">>", "_", "~"] # _ is for negate    
+    
 def decodeSpecial(line: str) -> list[str]:
     decodedAssembly = []
 
@@ -110,11 +113,38 @@ def decodeSpecial(line: str) -> list[str]:
 
     elif "while" in line:
         # While loop
-        pass
+        if "end" in line:
+            decodedAssembly.append(f"    JMP {name}")
+            decodedAssembly.append(f"{name}end:")
+        else:
+            decodedAssembly.append(f"{name}:")
+
+            equationSide = line.split("(")[1][:-2]
+            equationSide = shlex.split(equationSide, posix=False)
+
+            expressionAssembly = logicExpression(equationSide, name)
+            if expressionAssembly[0] == "FAIL": 
+                print("You must only have one symbol per section of a logic expression (sections are split by combination symbols)")
+                return ["FAIL"]
+            for codeLine in expressionAssembly:
+                decodedAssembly.append(codeLine)
 
     elif "if" in line:
         # If statement
-        pass
+        if "end" in line:
+            decodedAssembly.append(f"{name}end:")
+        else:
+            decodedAssembly.append(f"{name}:")
+
+            equationSide = line.split("(")[1][:-2]
+            equationSide = shlex.split(equationSide, posix=False)
+
+            expressionAssembly = logicExpression(equationSide, name)
+            if expressionAssembly[0] == "FAIL": 
+                print("You must only have one symbol per section of a logic expression (sections are split by combination symbols)")
+                return ["FAIL"]
+            for codeLine in expressionAssembly:
+                decodedAssembly.append(codeLine)
 
     elif "function" in line:
         # Function
@@ -171,6 +201,103 @@ def decodeSpecial(line: str) -> list[str]:
 
     return decodedAssembly
 
+# These are restricted. Main rules are NO bitwise operators
+def logicExpression(equationSide: list[str], name: str) -> list[str]:
+    logicSymbols = [">", "=", ">=", "<", "<=", "!="]
+    logicSymbolInvertDict = {">": "<=", "=": "!=", ">=": "<", "<": ">=", "<=": ">", "!=": "="}
+    combinationSymbols = ["and", "or", "not"]
+
+    sym = "-"
+    numSyms = 0
+    for i in equationSide:
+        if i in logicSymbols:
+            numSyms += 1
+        elif i in combinationSymbols:
+            numSyms = 0
+        if numSyms > 1:
+            return ["FAIL"]
+
+    i = 0
+    while i <= len(equationSide):
+        tok = equationSide[i]
+        if tok in logicSymbols:
+
+            if i + 1 >= len(equationSide):
+                equationSide.append("0")
+                break
+            elif equationSide[i + 1] in combinationSymbols:
+                equationSide.insert(i + 1, "0")
+            else:
+                if equationSide[i + 1] in tokens:
+                    equationSide[i] = tok
+                    match equationSide[i + 1]:
+                        case "-": sym = "+"
+                        case _: sym = "-"
+                    del equationSide[i + 1]
+                    i -= 1
+                else:
+                    equationSide.insert(i + 2, tok)
+                    equationSide[i] = sym
+                    sym = "-"
+        i += 1
+    i = 0
+    while i < len(equationSide):
+        tok = equationSide[i]
+        if tok == "not":
+            del equationSide[i]
+            while tok not in logicSymbols:
+                tok = equationSide[i]
+                i += 1
+            equationSide[i - 1] = logicSymbolInvertDict[tok]
+        i += 1
+
+    decodedAssembly = []
+    equation = []
+    i = 0
+    combination = "or"
+    while i < len(equationSide):
+        if i + 2 < len(equationSide):
+            if equationSide[i + 2] in combinationSymbols:
+                combination = equationSide[i + 2]
+
+        tok = equationSide[i]
+        if tok not in logicSymbols:
+            if tok not in combinationSymbols:
+                equation.append(tok)
+        else:
+            expressionAssembly = expression(equation)
+            equation = []
+            for codeLine in expressionAssembly:
+                decodedAssembly.append(codeLine)
+
+            if combination == "and":
+                match tok:
+                    case ">": decodedAssembly.append(f"    JLE acc {name}end")
+                    case "=": decodedAssembly.append(f"    JNE acc {name}end")
+                    case ">=": decodedAssembly.append(f"    JLT acc {name}end")
+                    case "<": decodedAssembly.append(f"    JGE acc {name}end")
+                    case "<=": decodedAssembly.append(f"    JGT acc {name}end")
+                    case "!=": decodedAssembly.append(f"    JEQ acc {name}end")
+            elif combination == "or":
+                match tok:
+                    case ">": decodedAssembly.append(f"    JGT acc {name}true")
+                    case "=": decodedAssembly.append(f"    JEQ acc {name}true")
+                    case ">=": decodedAssembly.append(f"    JGE acc {name}true")
+                    case "<": decodedAssembly.append(f"    JLT acc {name}true")
+                    case "<=": decodedAssembly.append(f"    JLE acc {name}true")
+                    case "!=": decodedAssembly.append(f"    JNE acc {name}true")
+
+            if i + 2 >= len(equationSide):
+                if combination == "and": decodedAssembly.append(f"    JMP {name}true")
+                elif combination == "or": decodedAssembly.append(f"    JMP {name}end")
+            i += 1
+
+        i += 1
+        if i >= len(equationSide):
+            decodedAssembly.append(f"{name}true:")
+
+    return decodedAssembly
+
 def expression(equationSide: list[str]) -> list[str]:
     decodedAssembly = []
 
@@ -202,6 +329,10 @@ def main():
     print("Welcome to the BBPL Compiler")
     fileName = "fibbonachi.bbpl" # getFile()
     assembly = decode(fileName)
+    if assembly[0] == "FAIL":
+        print("An error occurred.")
+        input("Press anything to continue...")
+        return
     writeFile(fileName, assembly)
 
     print("Complete")

@@ -1,4 +1,4 @@
-# This is the Bear Compiler
+# This is the Bear Compiler # noqa N999
 
 # This is a high-level programming language for the Bear-16 CPU
 

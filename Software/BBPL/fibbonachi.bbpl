@@ -3,7 +3,7 @@ BBPLMain:
 
     RSR
 
-function fibbonachi(r1, r2, r3):
+function fibbonachiBBPL(r1, r2, r3):
     ; r1 is the NthTerm
     ; r2 is the zeroth term
     ; r3 is the first term
@@ -13,4 +13,4 @@ function fibbonachi(r1, r2, r3):
     LDR r2 r4
     endfor fibbonachiLoop0()
 
-    return fibbonachi(r2)
+    return fibbonachiBBPL(r2)

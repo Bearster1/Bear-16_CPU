@@ -5,9 +5,9 @@ BBPLMain:
     PUSH acc
     LDR acc 2
     PUSH acc
-    JSR fibbonachi
+    JSR fibbonachiBBPL
     RSR
-fibbonachi:
+fibbonachiBBPL:
     POP r0
     POP r1
     POP r2
