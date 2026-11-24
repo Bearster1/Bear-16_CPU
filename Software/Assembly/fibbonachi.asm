@@ -1,34 +1,49 @@
 BBPLMain:
-    LDR acc 5
+    LDR acc $0005
+    STM acc $0500
+    LDR acc $0000
+    STM acc $0501
+    LDR acc $0001
+    STM acc $0502
+    LDR acc $FFFF
+    STM acc $0503
+    LDM acc $0500
     PUSH acc
-    LDR acc 0
+    LDM acc $0501
     PUSH acc
-    LDR acc 2
+    LDM acc $0502
     PUSH acc
     JSR fibbonachiBBPL
     RSR
 fibbonachiBBPL:
     POP r0
-    POP r1
-    POP r2
-    POP r3
+    POP acc
+    STM acc $0500
+    POP acc
+    STM acc $0501
+    POP acc
+    STM acc $0502
     PUSH r0
-    LDR acc r1
+    LDM acc $0500
     PUSH acc
 fibbonachiLoop0:
     POP acc
     JEQ acc fibbonachiLoop0end
     SUB 1
     PUSH acc
-    LDR r4 r3
-    LDR acc r2
-    ADD r3
-    LDR r3 acc
-    LDR r2 r4
+    LDM acc $0502
+    STM acc $0503
+    LDM acc $0501
+    PUSH r0
+    LDM r0 $0502
+    ADD r0
+    STM acc $0502
+    LDM acc $0503
+    STM acc $0501
     JMP fibbonachiLoop0
 fibbonachiLoop0end:
     POP r0
-    LDR acc r2
+    LDM acc $0501
     PUSH acc
     PUSH r0
     RSR

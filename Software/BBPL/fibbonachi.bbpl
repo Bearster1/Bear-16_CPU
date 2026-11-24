@@ -1,16 +1,19 @@
 BBPLMain:
-    call fibbonachi(5, 0, 2)
+    var NthTerm($0005)
+    var ZerothTerm($0000)
+    var FirstTerm($0001)
+
+    var Temp($FFFF) ; Use this for all the temporary operations
+
+    call fibbonachiBBPL(NthTerm, ZerothTerm, FirstTerm)
 
     RSR
 
-function fibbonachiBBPL(r1, r2, r3):
-    ; r1 is the NthTerm
-    ; r2 is the zeroth term
-    ; r3 is the first term
-    for fibbonachiLoop0(r1):
-    LDR r4 r3
-    r3 = (r2 + r3)
-    LDR r2 r4
+function fibbonachiBBPL(NthTerm, ZerothTerm, FirstTerm):
+    for fibbonachiLoop0(NthTerm):
+    Temp = (FirstTerm)
+    FirstTerm = (ZerothTerm + FirstTerm)
+    ZerothTerm = (Temp)
     endfor fibbonachiLoop0()
 
-    return fibbonachiBBPL(r2)
+    return fibbonachiBBPL(ZerothTerm)

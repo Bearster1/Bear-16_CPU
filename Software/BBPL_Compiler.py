@@ -13,6 +13,18 @@ import shlex  # noqa: N999
 # This will still use the basic assembly registers as variables but it will have additional features such as if statements, for loops, while loops.
 # The indicator for a special line is brackets ()
 # Multi-line statements (if, for, while, subroutines) must have the name before the bracket, this is for everything included in them.
+#
+# One huge rule of this is DONT USE THE ACC AS A STORAGE. IT WILL GET OVERWRITTEN VERY QUICKLY
+#
+# Adding variables.
+# These must be defined before being used. To define a variable do: '   var {name}({expression})'
+# Afterwards anything with the same name will become the address correlating to the data of that variable.
+# Each variable holds 2 bytes of data. This is always an int.
+# The variable will be initilised with the data inside the brackets.
+
+variables = []
+variableStart = 0x0500
+variableEnd = 0x0600
 
 labelCounter = 0
 
@@ -97,7 +109,7 @@ def decodeSpecial(line: str) -> list[str]:
             decodedAssembly.append(f"{name}end:")
         else:
             # for loop start
-            equationSide = line.split("(")[1][:-2]
+            equationSide = line.split("(")[1].strip()[:-2]
             equationSide = shlex.split(equationSide, posix=False)
 
             expressionAssembly = expression(equationSide)
@@ -119,7 +131,7 @@ def decodeSpecial(line: str) -> list[str]:
         else:
             decodedAssembly.append(f"{name}:")
 
-            equationSide = line.split("(")[1][:-2]
+            equationSide = line.split("(")[1].strip()[:-2]
             equationSide = shlex.split(equationSide, posix=False)
 
             expressionAssembly = logicExpression(equationSide, name)
@@ -136,7 +148,7 @@ def decodeSpecial(line: str) -> list[str]:
         else:
             decodedAssembly.append(f"{name}:")
 
-            equationSide = line.split("(")[1][:-2]
+            equationSide = line.split("(")[1].strip()[:-2]
             equationSide = shlex.split(equationSide, posix=False)
 
             expressionAssembly = logicExpression(equationSide, name)
@@ -150,15 +162,20 @@ def decodeSpecial(line: str) -> list[str]:
         # Function
         decodedAssembly.append(f"{name}:")
         decodedAssembly.append("    POP r0")
-        parameters = line.split("(", maxsplit=1)[1][:-2].replace(' ', '').split(',')
+        parameters = line.split("(", maxsplit=1)[1].replace(' ', '')[:-2].split(',')
         for parameter in parameters:
-            decodedAssembly.append(f"    POP {parameter}")
+            if parameter in variables:
+                address = "$" + hex((variables.index(parameter) + variableStart) & 0xFFFF).replace('0x', '').zfill(4)
+                decodedAssembly.append("    POP acc")
+                decodedAssembly.append(f"    STM acc {address}")
+            else:
+                decodedAssembly.append(f"    POP {parameter}")
         decodedAssembly.append("    PUSH r0")
 
     elif "return" in line:
         # Return
         decodedAssembly.append("    POP r0")
-        returnVals = line.split("(", maxsplit=1)[1][:-1].split(',')
+        returnVals = line.split("(", maxsplit=1)[1].strip()[:-1].split(',')
         for returnVal in returnVals:
             equationSide = shlex.split(returnVal, posix=False)
 
@@ -183,7 +200,29 @@ def decodeSpecial(line: str) -> list[str]:
             decodedAssembly.append("    PUSH acc")
         decodedAssembly.append(f"    JSR {name}")
 
-    elif tokenInLine:
+    elif "var" in line:
+        address = ( len(variables) + variableStart) & 0xFFFF
+        if address >= variableEnd:
+            print(f"You must have less than {variableEnd - variableStart} variable", end="")
+            if variableEnd - variableStart == 1: print(".")
+            else: print("s.")
+
+            return ["FAIL"]
+        address = "$" + hex(( len(variables) + variableStart) & 0xFFFF).replace('0x', '').zfill(4)
+
+        equationSide = line.split("(")[1].strip()[:-1]
+        equationSide = shlex.split(equationSide, posix=False)
+
+        expressionAssembly = expression(equationSide)
+        for codeLine in expressionAssembly:
+            decodedAssembly.append(codeLine)
+
+        
+        decodedAssembly.append(f"    STM acc {address}")
+
+        variables.append(name)
+
+    else:
         # Calculation
 
         # this will go left to right
@@ -197,7 +236,11 @@ def decodeSpecial(line: str) -> list[str]:
         for codeLine in expressionAssembly:
             decodedAssembly.append(codeLine)
 
-        decodedAssembly.append(f"    LDR {sides[0]} acc")
+        if sides[0] in variables:
+            address = "$" + hex((variables.index(sides[0]) + variableStart) & 0xFFFF).replace('0x', '').zfill(4)
+            decodedAssembly.append(f"    STM acc {address}")
+        else:
+            decodedAssembly.append(f"    LDR {sides[0]} acc")
 
     return decodedAssembly
 
@@ -301,12 +344,22 @@ def logicExpression(equationSide: list[str], name: str) -> list[str]:
 def expression(equationSide: list[str]) -> list[str]:
     decodedAssembly = []
 
-    decodedAssembly.append("    LDR acc " + equationSide[0])
+    if equationSide[0] in variables:
+        address = "$" + hex((variables.index(equationSide[0]) + variableStart) & 0xFFFF).replace('0x', '').zfill(4)
+        decodedAssembly.append(f"    LDM acc {address}")
+    else:
+        decodedAssembly.append("    LDR acc " + equationSide[0])
     equationSide = equationSide[1:]
     lastVal = None
     getNextVal = False
     for val in equationSide:
         if getNextVal:
+            if val in variables:
+                address = "$" + hex((variables.index(val) + variableStart) & 0xFFFF).replace('0x', '').zfill(4)
+                decodedAssembly.append("    PUSH r0")
+                decodedAssembly.append(f"    LDM r0 {address}")
+                val = "r0"
+
             match lastVal:
                 case "+": decodedAssembly.append("    ADD " + val)
                 case "-": decodedAssembly.append("    SUB " + val)
@@ -318,6 +371,9 @@ def expression(equationSide: list[str]) -> list[str]:
                 case "_": decodedAssembly.append("    NEG")
                 case "~": decodedAssembly.append("    NOT")
             getNextVal = False
+
+        if lastVal in variables:
+            decodedAssembly.append("    POP r0")
     
         if val in tokens:
             getNextVal = True
