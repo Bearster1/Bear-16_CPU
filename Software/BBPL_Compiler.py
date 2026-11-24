@@ -177,6 +177,8 @@ def decodeSpecial(line: str) -> list[str]:
         decodedAssembly.append("    POP r0")
         returnVals = line.split("(", maxsplit=1)[1].strip()[:-1].split(',')
         for returnVal in returnVals:
+            if returnVal == "":
+                continue
             equationSide = shlex.split(returnVal, posix=False)
 
             expressionAssembly = expression(equationSide)
@@ -383,7 +385,7 @@ def expression(equationSide: list[str]) -> list[str]:
 
 def main():
     print("Welcome to the BBPL Compiler")
-    fileName = "fibbonachi.bbpl" # getFile()
+    fileName = getFile()
     assembly = decode(fileName)
     if assembly[0] == "FAIL":
         print("An error occurred.")

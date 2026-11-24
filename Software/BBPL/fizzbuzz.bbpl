@@ -1,0 +1,92 @@
+Fizz = 3
+Buzz = 5
+
+BBPLMain:
+    var number($0000)
+
+    var leftHandSide($0000)
+    var rightHandSide($0000)
+    var fizzBuzz($0000)
+
+    var index($0000)
+    for fizzbuzzloop(20):
+    index = (index + 1)
+    fizzBuzz = (0)
+
+    call mod(index, Fizz)
+    POP r0
+    if fizz(r0 = 0):
+        PUSH FizzWord
+        JSR printString
+        fizzBuzz = (1)
+    endif fizz()
+
+    call mod(index, Buzz)
+    POP r0
+    if buzz(r0 = 0):
+        PUSH BuzzWord
+        JSR printString
+        fizzBuzz = (fizzBuzz + 1)
+    endif buzz()
+    
+    if fizzbuzzstate(fizzBuzz != 2):
+        call printNum(index)
+    endif fizzbuzzstate()
+
+    PUSH "\n"
+    JSR outChar
+    endfor fizzbuzzloop()
+    
+
+function mod(leftHandSide, rightHandSide):
+    while modLoop(leftHandSide >= rightHandSide):
+        leftHandSide = (leftHandSide - rightHandSide)
+    endwhile modLoop()
+
+    return mod(leftHandSide)
+
+function printNum(number):
+    r0 = (number & $F000)
+    for firstHexLoop(12):
+        r0 = (r0 >> 1)
+    endfor firstHexLoop()
+    call outHex(r0)
+
+    r0 = (number & $F00)
+    for secondHexLoop(8):
+        r0 = (r0 >> 1)
+    endfor secondHexLoop()
+    call outHex(r0)
+
+    r0 = (number & $F0)
+    for thirdHexLoop(4):
+        r0 = (r0 >> 1)
+    endfor thirdHexLoop()
+    call outHex(r0)
+
+    r0 = (number & $F)
+    call outHex(r0)
+
+    return printNum()
+
+function outHex(r1):
+    r1 = (r1 & $F)
+    if nums(r1 < $A):
+        r2 = (r1 + $30)
+        PUSH r1
+        PUSH r2
+        JSR outChar
+        POP r1
+    endif nums()
+    
+    if lets(r1 > 9):
+        r2 = (r1 + 7)
+        PUSH r2
+        JSR outChar
+    endif lets()
+
+    return outHex()
+FizzWord:
+.zstring "Fizz"
+BuzzWord:
+.zstring "Buzz"
