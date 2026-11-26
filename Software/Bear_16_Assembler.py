@@ -6,6 +6,7 @@ import shlex  # noqa: N999
 # .zstring inserts a string of characters such as "Hello World!" as ascii codes into the memory with a zero at the end.
 # .org sets the placement address of the code that follows such as .org $8000 which makes the code that follows start at address $8000
 # .word inserts two bytes into the memory
+# .include imports another .asm file into the ROM. Requires name and extension
 
 # To specify which base the numbers are using you use different symbols such as $, %, £, and No symbol
 # $ is a hex number
@@ -295,7 +296,38 @@ def cleanse(instructions: list[str]) -> list[int]:
             if immediate != None:
                 decodedInstructions[lineNum - 0x8000] = fixBits(immediate)
                 lineNum += 1
-    return decodedInstructions    
+    return decodedInstructions
+
+nestedFiles = ["ROM.asm"]
+def loadIncludes(instructions: list[str]) -> list[str]:
+    new_instructions = []
+
+    hasInclude = False
+    for instruction in instructions:
+        if instruction[:8] != ".include":
+            new_instructions.append(instruction)
+            continue
+
+        name = instruction[8:].strip()
+        try:
+            if name in nestedFiles:
+                print(f"A file contains an nested include of {name}.")
+                return ["FAIL"]
+            
+            with open(f"Bear-16_CPU/Software/Assembly/{name}", "r") as includedFile:
+                for line in includedFile:
+                    new_instructions.append(line.replace('\n', ''))
+                nestedFiles.append(name)
+        except FileNotFoundError:
+            print(f"File {name} does not exist.")
+            return ["FAIL"]
+        hasInclude = True
+
+    if hasInclude:
+        new_instructions = loadIncludes(new_instructions)
+        nestedFiles.pop()
+
+    return new_instructions
 
 def loadFile() -> list[str]:
     instructions = []
@@ -313,6 +345,11 @@ def writeFile(instructions: list[int]):
 def main():
     print("Welcome to the Bear-16 Assembler")
     instructions = loadFile()
+    instructions = loadIncludes(instructions)
+    if instructions[0] == "FAIL":
+        print("An error occurred.")
+        input("Press anything to continue...")
+        return
     program = cleanse(instructions)
     writeFile(program)
 

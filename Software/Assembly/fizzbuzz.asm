@@ -1,6 +1,23 @@
 Fizz = 3
 Buzz = 5
 BBPLMain:
+    LDR acc ","
+    PUSH acc
+    LDR acc 5
+    PUSH acc
+    LDR acc 9
+    PUSH acc
+    LDR acc ","
+    PUSH acc
+    LDR acc 'h'
+    PUSH acc
+    LDR acc ','
+    PUSH acc
+    LDR acc "#"
+    PUSH acc
+    LDR acc "'"
+    PUSH acc
+    JSR printNum
     LDR acc $0000
     STM acc $0500
     LDR acc $0000

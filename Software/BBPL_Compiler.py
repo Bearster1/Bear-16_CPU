@@ -84,7 +84,7 @@ def decode(fileName: str) -> list[str]:
                     print("An error occurred when decoding special")
                     return ["FAIL"]
                 for line in decodedAssembly:
-                    assembly.append(line)
+                    assembly.append(line)  # noqa: PERF402 
             else:
                 assembly.append(line)
     return assembly
@@ -109,12 +109,12 @@ def decodeSpecial(line: str) -> list[str]:
             decodedAssembly.append(f"{name}end:")
         else:
             # for loop start
-            equationSide = line.split("(")[1].strip()[:-2]
+            equationSide = line.split("(", maxsplit=1)[1].strip()[:-2]
             equationSide = shlex.split(equationSide, posix=False)
 
             expressionAssembly = expression(equationSide)
             for codeLine in expressionAssembly:
-                decodedAssembly.append(codeLine)
+                decodedAssembly.append(codeLine)  # noqa: PERF402
     
             decodedAssembly.append("    PUSH acc")
             decodedAssembly.append(f"{name}:")
@@ -131,7 +131,7 @@ def decodeSpecial(line: str) -> list[str]:
         else:
             decodedAssembly.append(f"{name}:")
 
-            equationSide = line.split("(")[1].strip()[:-2]
+            equationSide = line.split("(", maxsplit=1)[1].strip()[:-2]
             equationSide = shlex.split(equationSide, posix=False)
 
             expressionAssembly = logicExpression(equationSide, name)
@@ -139,7 +139,7 @@ def decodeSpecial(line: str) -> list[str]:
                 print("You must only have one symbol per section of a logic expression (sections are split by combination symbols)")
                 return ["FAIL"]
             for codeLine in expressionAssembly:
-                decodedAssembly.append(codeLine)
+                decodedAssembly.append(codeLine)  # noqa: PERF402
 
     elif "if" in line:
         # If statement
@@ -148,7 +148,7 @@ def decodeSpecial(line: str) -> list[str]:
         else:
             decodedAssembly.append(f"{name}:")
 
-            equationSide = line.split("(")[1].strip()[:-2]
+            equationSide = line.split("(", maxsplit=1)[1].strip()[:-2]
             equationSide = shlex.split(equationSide, posix=False)
 
             expressionAssembly = logicExpression(equationSide, name)
@@ -156,7 +156,7 @@ def decodeSpecial(line: str) -> list[str]:
                 print("You must only have one symbol per section of a logic expression (sections are split by combination symbols)")
                 return ["FAIL"]
             for codeLine in expressionAssembly:
-                decodedAssembly.append(codeLine)
+                decodedAssembly.append(codeLine)  # noqa: PERF402
 
     elif "function" in line:
         # Function
@@ -175,7 +175,10 @@ def decodeSpecial(line: str) -> list[str]:
     elif "return" in line:
         # Return
         decodedAssembly.append("    POP r0")
-        returnVals = line.split("(", maxsplit=1)[1].strip()[:-1].split(',')
+        unsplit_returnVals = line.split("(", maxsplit=1)[1].strip()[:-1]
+
+        returnVals = letterSplit(unsplit_returnVals, ",")
+
         for returnVal in returnVals:
             if returnVal == "":
                 continue
@@ -183,7 +186,7 @@ def decodeSpecial(line: str) -> list[str]:
 
             expressionAssembly = expression(equationSide)
             for codeLine in expressionAssembly:
-                decodedAssembly.append(codeLine)
+                decodedAssembly.append(codeLine)  # noqa: PERF402
 
             decodedAssembly.append("    PUSH acc")
         decodedAssembly.append("    PUSH r0")
@@ -191,13 +194,16 @@ def decodeSpecial(line: str) -> list[str]:
 
     elif "call" in line:
         # calling a function
-        parameters = line.split("(", maxsplit=1)[1][:-1].split(',')
+        unsplit_parameters = line.split("(", maxsplit=1)[1][:-1]
+
+        parameters = letterSplit(unsplit_parameters, ",")
+                
         for parameter in parameters:
             equationSide = shlex.split(parameter.strip(), posix=False)
 
             expressionAssembly = expression(equationSide)
             for codeLine in expressionAssembly:
-                decodedAssembly.append(codeLine)
+                decodedAssembly.append(codeLine)  # noqa: PERF402
 
             decodedAssembly.append("    PUSH acc")
         decodedAssembly.append(f"    JSR {name}")
@@ -212,12 +218,12 @@ def decodeSpecial(line: str) -> list[str]:
             return ["FAIL"]
         address = "$" + hex(( len(variables) + variableStart) & 0xFFFF).replace('0x', '').zfill(4)
 
-        equationSide = line.split("(")[1].strip()[:-1]
+        equationSide = line.split("(", maxsplit=1)[1].strip()[:-1]
         equationSide = shlex.split(equationSide, posix=False)
 
         expressionAssembly = expression(equationSide)
         for codeLine in expressionAssembly:
-            decodedAssembly.append(codeLine)
+            decodedAssembly.append(codeLine)  # noqa: PERF402
 
         
         decodedAssembly.append(f"    STM acc {address}")
@@ -301,10 +307,10 @@ def logicExpression(equationSide: list[str], name: str) -> list[str]:
     i = 0
     combination = "or"
     while i < len(equationSide):
-        if i + 2 < len(equationSide):
+        if i + 2 < len(equationSide):  # noqa: SIM102
             if equationSide[i + 2] in combinationSymbols:
                 combination = equationSide[i + 2]
-
+            
         tok = equationSide[i]
         if tok not in logicSymbols:
             if tok not in combinationSymbols:
@@ -382,6 +388,36 @@ def expression(equationSide: list[str]) -> list[str]:
         lastVal = val
 
     return decodedAssembly
+
+def letterSplit(string: str, char: str = " ") -> list[str]:
+    quote1 = False
+    quote2 = False
+    
+    splits = []
+    word = ""
+    for character in string:
+        if character == "'":
+            word += character
+            quote1 = not quote1
+            continue
+        elif quote1:
+            word += character
+            continue
+        if character == '"':
+            word += character
+            quote2 = not quote2
+            continue
+        elif quote2:
+            word += character
+            continue            
+        if character == char:
+            splits.append(word)
+            word = ""
+            continue
+        word += character
+    splits.append(word)
+
+    return splits
 
 def main():
     print("Welcome to the BBPL Compiler")

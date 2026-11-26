@@ -85,6 +85,7 @@ Bits F + G + H are the Data bus. It has the same codes as the Condition bus but 
 .zstring inserts a string of characters such as "Hello World!" as ascii codes into the memory with a zero at the end.
 .org sets the placement address of the code that follows such as .org $8000 which makes the code that follows start at address $8000
 .word inserts two bytes into the memory
+.include imports another .asm file into the ROM. Requires name and extension
 
 ## NUMBERS:
 $ is a hex number
