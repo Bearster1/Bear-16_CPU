@@ -189,9 +189,14 @@ printStackResetLoop:
     RSR
 
 printStackBackspaceHandler:
+    LDM acc PrintStackPointer
+    SUB PrintStackStart
+    JEQ acc printStackBackspaceEnd ; Don't backspace if there is nothing there
+
     JSR printStackPop
     POP r0
 
+printStackBackspaceEnd:
     RSR
 
 printStackPush:
@@ -236,6 +241,7 @@ printStackPrint:
     PUSH PrintStackStart
     JSR printString
 
+    RSR
 
 lenString:
     ; This finds the length of a string and returns it
@@ -461,11 +467,6 @@ keyboard:
 
     LDM r1 acc ; r1 holds the ascii code now
 
-    LDM acc KeyboardPointer
-    SUB KeyboardEnd
-    JEQ keyboardPointerReset
-keyboardReturn:
-
     LDM r0 ShiftFlag ; r0 holds the Condition of the Shift Flag
 
     JEQ r0 unshiftedKeyboard
@@ -477,7 +478,7 @@ keyboardPointerReset:
     LDR r0 KeyboardStart
     STM r0 KeyboardPointer ; Reset the KeyboardPointer
 
-    JMP keyboardReturn
+    RSR
 
 shiftedKeyboard:
     LDR acc r1 ; Acc holds the ascii code now
@@ -531,6 +532,9 @@ keyboardEnd:
     LDM acc KeyboardPointer
     ADD $0001
     STM acc KeyboardPointer
+
+    SUB KeyboardEnd
+    JEQ acc keyboardPointerReset
 
     RSR
 

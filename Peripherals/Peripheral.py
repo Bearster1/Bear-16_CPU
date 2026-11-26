@@ -1,4 +1,6 @@
 # noqa: N999
+import os
+
 import Peripherals.keyboardInput as keyboardInput  # noqa: PLR0402
 import Peripherals.secondaryMemory as secondaryMemory  # noqa: PLR0402
 import Peripherals.terminal as terminal  # noqa: PLR0402
@@ -9,7 +11,7 @@ class peripheral:
         self.peripherals = [
             terminal.terminal(0x6002, 0x6003),
             keyboardInput.keyboardInput(0x7000, 0x7100),
-            secondaryMemory.secondaryMemory(0x6012, 0x6013, 0x6014, 0x6015, "Bear-16_CPU/Peripherals/secondaryMemory.bin"),
+            secondaryMemory.secondaryMemory(0x6012, 0x6013, 0x6014, 0x6015, os.path.join(os.path.dirname(__file__), "secondaryMemory.bin")),
         ]
 
     def confirmFormat(self, searchAddress: int) -> str:

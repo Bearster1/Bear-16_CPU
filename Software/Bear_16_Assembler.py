@@ -1,4 +1,5 @@
-import shlex  # noqa: N999
+import os  # noqa: N999
+import shlex
 
 # This is the Bear-16 Assembler
 
@@ -82,7 +83,7 @@ def fixBits(data: int, bits: int = 16) -> int:
     mask = (1 << bits) - 1
     return mask & data
 
-def decode(instruction: str, labels: dict, consts: dict) -> (int, int) | (int, None): # type: ignore
+def decode(instruction: str, labels: dict, consts: dict) -> tuple[int, int | None]:
     parts = shlex.split(instruction.strip(), posix=False) # Splits but protects the space in the quotes
     opcode = parts[0].upper()
     data_bus = "NONE"
@@ -164,7 +165,9 @@ def decode(instruction: str, labels: dict, consts: dict) -> (int, int) | (int, N
         case "POP":  opcode = 0x1E
         case "JSR":  opcode = 0x1F
         case "RSR":  opcode = 0x20
-        case _: opcode = 0x00
+        case _:
+            print(f"Unknown instruction: {parts[0]}")
+            opcode = 0x00
 
     code = (opcode << 8) + operand
 
@@ -183,13 +186,21 @@ def cleanse(instructions: list[str]) -> list[int]:
         if ';' in instruction:
             quote1 = False
             quote2 = False
+            slash = False
             for indexJ in range(len(instruction)):
                 character = instruction[indexJ]
-                if character == "'":
+                if slash:
+                    slash = False
+                    continue
+                if character == "\\" and quote2:
+                    slash = True
+                    continue
+
+                if character == "'" and not quote2:
                     quote1 = not quote1
                 elif quote1:
                     continue
-                if character == '"':
+                if character == '"' and not quote1:
                     quote2 = not quote2
                 elif quote2:
                     continue
@@ -201,7 +212,7 @@ def cleanse(instructions: list[str]) -> list[int]:
         if instruction.strip() == "":
             continue
 
-        if instruction[0] == " ":
+        if instruction[0].isspace():
             pass
         else:
             if instruction[-1] == ":":
@@ -225,9 +236,9 @@ def cleanse(instructions: list[str]) -> list[int]:
     for index in range(len(cleanInstructions)):
         instruction = cleanInstructions[index]
 
-        if ".org" in instruction:
-            lineNum = base(instruction.split(" ")[-1])
-        elif ".zstring" in instruction:
+        if instruction.strip().startswith(".org"):
+            lineNum = base(instruction.split()[-1])
+        elif instruction.strip().startswith(".zstring"):
             string = shlex.split(instruction)[-1]
             slash = False
             for character in string:
@@ -238,17 +249,17 @@ def cleanse(instructions: list[str]) -> list[int]:
                 lineNum += 1
                 slash = False
             lineNum += 1 # Add one to compensate for the 0
-        elif ".word" in instruction:
+        elif instruction.strip().startswith(".word"):
             lineNum += 1
 
         if lineNum < 0x8000:
             continue
 
-        if instruction[0] == " ":
-            parts = instruction.strip().split(" ")
+        if instruction[0].isspace():
+            parts = shlex.split(instruction.strip(), posix=False)
             dataBus = parts[-1].lower()
             
-            if dataBus not in nonImmediates and len(parts) > 1:
+            if parts[0].upper() != "POP" and dataBus not in nonImmediates and len(parts) > 1:
                 lineNum += 1
             lineNum += 1
         elif instruction.strip()[-1] == ":":
@@ -264,9 +275,9 @@ def cleanse(instructions: list[str]) -> list[int]:
     for index in range(len(lineNumInstructions)):
         instruction = lineNumInstructions[index]
 
-        if ".org" in instruction:
-            lineNum = base(instruction.split(" ")[-1])
-        elif ".zstring" in instruction:
+        if instruction.strip().startswith(".org"):
+            lineNum = base(instruction.split()[-1])
+        elif instruction.strip().startswith(".zstring"):
             string = shlex.split(instruction)[-1]
             slash = False
             for character in string:
@@ -277,6 +288,8 @@ def cleanse(instructions: list[str]) -> list[int]:
                     character = 10
                 elif character == "e" and slash:
                     character = 27
+                elif character == "b" and slash:
+                    character = 8
                 else:
                     character = ord(character)
                 decodedInstructions[lineNum - 0x8000] = fixBits(character)
@@ -284,9 +297,9 @@ def cleanse(instructions: list[str]) -> list[int]:
                 slash = False
             decodedInstructions[lineNum - 0x8000] = 0x0000
             lineNum += 1
-        elif ".word" in instruction:
-            value = instruction.strip().split(" ")[-1]
-            decodedInstructions[lineNum - 0x8000] = word(value, labels, consts)
+        elif instruction.strip().startswith(".word"):
+            value = shlex.split(instruction.strip(), posix=False)[-1]
+            decodedInstructions[lineNum - 0x8000] = fixBits(word(value, labels, consts))
             lineNum += 1
 
         else:
@@ -331,13 +344,13 @@ def loadIncludes(instructions: list[str]) -> list[str]:
 
 def loadFile() -> list[str]:
     instructions = []
-    with open("Bear-16_CPU/Software/Assembly/ROM.asm", "r") as ROM:
+    with open(os.path.join(os.path.dirname(__file__), "Assembly/ROM.asm"), "r", encoding="utf-8") as ROM:
         for line in ROM:
             instructions.append(line.replace('\n', ''))
     return instructions
 
 def writeFile(instructions: list[int]):
-    with open("Bear-16_CPU/Software/Binary/ROM.bin", "w") as ROM:
+    with open(os.path.join(os.path.dirname(__file__), "Binary/ROM.bin"), "w") as ROM:
         for word in instructions:
             word = hex(word).replace('0x', '').zfill(4)
             ROM.write(word)

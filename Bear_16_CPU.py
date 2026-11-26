@@ -1,3 +1,5 @@
+import os
+
 import Peripherals.Peripheral as Peripheral  # noqa: PLR0402
 
 
@@ -29,8 +31,8 @@ class accumulator(register):
         self.carry = carry
 
     def accFixBits(self, data: int, bits: int = 16):
-        strdata = bin(data).replace("0b", "").replace("-", "")
-        if len(strdata) >= bits + 1:
+        strdata = bin(data).replace("0b", "")
+        if data >= 0 and len(strdata) >= bits + 1:
             self.carry.store(fixBits(int(strdata[len(strdata) - (bits + 1)]))) # type: ignore
         else:
             self.carry.store(0) # type: ignore
@@ -82,10 +84,10 @@ class stackPointer(register):
 
     def pop(self) -> int:
         self.data = fixBits(self.data - 1)
-        returnData = self.mem.read(fixBits(self.data)) # type: ignore
-
         if self.data < self.stackStart:
             self.data = fixBits(self.stackStart + self.stackSize - 1)
+
+        returnData = self.mem.read(fixBits(self.data)) # type: ignore
 
         return fixBits(returnData)
 
@@ -307,7 +309,7 @@ class CPU:
                 if self.data_bus.read() != 0:
                     self.PC.store(self.condition_bus.read())
             case 27: # JLE x y ; Jumps to y (Condition bus) if x (Data bus) is less than or equal to 0
-                if self.data_bus.read() > 0x7FFF or self.condition_bus.read() == 0:
+                if self.data_bus.read() > 0x7FFF or self.data_bus.read() == 0:
                     self.PC.store(self.condition_bus.read())
             
             case 28: self.PC.store(self.data_bus.read()) # JMP x ; Jumps to y (Data bus)
@@ -321,10 +323,8 @@ class CPU:
             case 32: # RSR ; Pops return address from stack then jumps back to return address
                 self.PC.store(self.stackPointer.pop())
 
-            case 0xFF: print(f"{self.data_bus.name}: {self.data_bus.read()}")
-
     def loadROM(self) -> None:
-        with open("Bear-16_CPU/Software/Binary/ROM.bin", "r") as ROM:
+        with open(os.path.join(os.path.dirname(__file__), "Software/Binary/ROM.bin"), "r") as ROM:
             program = ROM.read()
             for i in range(32768):
                 word = ""

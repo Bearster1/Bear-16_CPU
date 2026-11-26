@@ -1,4 +1,7 @@
-def fixBits(data: int, bits: int = 16) -> int: # noqa: N999
+import os  # noqa: N999
+
+
+def fixBits(data: int, bits: int = 16) -> int:
     mask = (1 << bits) - 1
     return mask & data
 
@@ -77,7 +80,7 @@ def writeROM():
         0x013A, # LDR acc r2
         0x0540, # ADD i0001
         0x0001,
-        0x010F, # LDR r2 acc
+        0x0117, # LDR r2 acc
 
         0x0402, # STM r2 r0
         0x0021,
@@ -91,7 +94,7 @@ def writeROM():
     for index in range(len(words)):
         program[index] = fixBits(words[index])
 
-    with open("Bear-16_CPU/Software/Binary/ROM.bin", "w") as ROM:
+    with open(os.path.join(os.path.dirname(__file__), "Binary/ROM.bin"), "w") as ROM:
         for word in program:
             word = hex(word).replace('0x', '').zfill(4)
             ROM.write(word)

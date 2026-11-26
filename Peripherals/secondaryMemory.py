@@ -8,7 +8,7 @@ class secondaryMemory:
         # Data Out Add is the address of the data where it writes to, 
         # addressAdd is the address of the address in the storage where the data will be written to,
         # Clock add is the address of the clock,
-        # fileName is the name of the data file ; Usually set to "Bear-16_CPU/Peripherals/secondaryMemory.bin"
+        # fileName is the name of the data file ; Usually set to "Peripherals/secondaryMemory.bin"
         self.dataInAdd = dataInAdd
         self.dataOutAdd = dataOutAdd
         self.addressAdd = addressAdd
@@ -59,5 +59,7 @@ class secondaryMemory:
 
                 for data in memoryData:
                     memory.write(data)
+
+            self.datas[self.clockAdd] = 0
 
         self.datas[self.dataOutAdd] = int(memoryData[address], 16)

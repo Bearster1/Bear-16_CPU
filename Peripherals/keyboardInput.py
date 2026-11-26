@@ -23,7 +23,7 @@ class keyboardInput:
         return self.datas[dataAdd]
 
     def execute(self, pressedKey: object) -> None:
-        keyName = pressedKey.name.lower() # type: ignore
+        keyName = str(pressedKey.name).lower() # type: ignore
         match keyName:
             case "esc": key = 0x0001
             case "f1": key = 0x0002
@@ -115,12 +115,11 @@ class keyboardInput:
             case "*": key = 0x0058
             case "+": key = 0x0059
             case "decimal": key = 0x005A
-            case _: key = 0x0000
+            case _: return # Ignore keys that aren't in the map
 
         self.datas[self.keyPointer] = key
         self.keyPointer += 1
 
         if self.keyPointer >= self.dataEndAdd:
             self.keyPointer = self.dataStartAdd
-            for address in range(self.dataStartAdd, self.dataEndAdd):
-                self.datas[address] = 0x0000
+        self.datas[self.keyPointer] = 0x0000

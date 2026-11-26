@@ -10,7 +10,7 @@ import Software.ROMWrite as ROMWrite  # noqa: PLR0402
 def feature(message):
     print(f"You picked: {message}")
     time.sleep(2)
-    os.system('cls')
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 print("Welcome to the Bear-16 CPU")
 while True:
@@ -39,9 +39,9 @@ while True:
         case _:
             print("This is not an option. Closing...")
             time.sleep(2)
-            os.system('cls')
+            os.system('cls' if os.name == 'nt' else 'clear')
             break
     print("Option finished!")
     time.sleep(2)
-    os.system('cls')
+    os.system('cls' if os.name == 'nt' else 'clear')
 print("Thank you for using the Bear-16 CPU!")
