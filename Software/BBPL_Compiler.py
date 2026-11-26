@@ -32,7 +32,7 @@ def getFile() -> str:
     while True:
         fileName = input("Enter the BBPL program you would like to compile (with the extension): ")
         if fileName[-5:] != ".bbpl":
-            print("The filename must have a .bear extension.")
+            print("The filename must have a .bbpl extension.")
             continue
         try:
             with open(f"Bear-16_CPU/Software/BBPL/{fileName}", "r"):
